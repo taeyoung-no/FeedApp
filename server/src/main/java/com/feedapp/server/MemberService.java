@@ -8,6 +8,7 @@ public class MemberService {
 	private final MemberRepository memberRepository;
 
 	public MemberResponse signup(String username, String password) {
-		return null;
+		Member saved = memberRepository.save(new Member(null, username, password));
+		return new MemberResponse(saved.getId(), saved.getUsername());
 	}
 }
