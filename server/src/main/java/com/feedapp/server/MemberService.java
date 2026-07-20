@@ -11,7 +11,7 @@ public class MemberService {
 		validateLength(username);
 		validateLength(password);
 		if (memberRepository.existsByUsername(username)) {
-			throw new IllegalArgumentException("username already exists");
+			throw new IllegalArgumentException("username 중복임");
 		}
 		Member saved = memberRepository.save(new Member(null, username, password));
 		return new MemberResponse(saved.getId(), saved.getUsername());
