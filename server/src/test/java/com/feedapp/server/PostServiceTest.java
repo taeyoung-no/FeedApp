@@ -1,6 +1,8 @@
 package com.feedapp.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -55,5 +57,26 @@ class PostServiceTest {
 		final List<PostResponse> result = postService.findAll();
 
 		assertThat(result).isEmpty();
+	}
+
+	@Test
+	@DisplayName("유효한 요청이면 게시글 저장하고 정보 반환")
+	void create() {
+		final String title = "title";
+		final String content = "content";
+		final String author = "author";
+		final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+		final var saved = new Post(1L, title, content, author, createdAt);
+		when(postRepository.save(any(Post.class))).thenReturn(saved);
+
+		final PostResponse result = postService.create(title, content, author);
+
+		assertThat(result.getId()).isEqualTo(1L);
+		assertThat(result.getTitle()).isEqualTo(title);
+		assertThat(result.getContent()).isEqualTo(content);
+		assertThat(result.getAuthor()).isEqualTo(author);
+		assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+
+		verify(postRepository).save(any(Post.class));
 	}
 }
