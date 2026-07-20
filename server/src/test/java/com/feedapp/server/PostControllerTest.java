@@ -71,13 +71,14 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("유효한 요청이면 게시글 작성 성공")
+    @DisplayName("유효한 요청이면 토큰 username으로 게시글 작성 성공")
     void create() throws Exception {
-        final var request = new CreatePostRequest("title", "content", "author");
+        final String username = "author";
+        final var request = new CreatePostRequest("title", "content");
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final String token = jwtTokenProvider.createToken("author");
-        when(postService.create(request.title(), request.content(), request.author()))
-                .thenReturn(new PostResponse(1L, request.title(), request.content(), request.author(), createdAt));
+        final String token = jwtTokenProvider.createToken(username);
+        when(postService.create(request.title(), request.content(), username))
+                .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt));
 
         mockMvc.perform(post("/api/posts")
                         .header("Authorization", "Bearer " + token)
@@ -87,14 +88,14 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.title").value(request.title()))
                 .andExpect(jsonPath("$.content").value(request.content()))
-                .andExpect(jsonPath("$.author").value(request.author()))
+                .andExpect(jsonPath("$.author").value(username))
                 .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
     }
 
     @Test
     @DisplayName("토큰이 없으면 게시글 작성 실패")
     void createWithoutToken() throws Exception {
-        final var request = new CreatePostRequest("title", "content", "author");
+        final var request = new CreatePostRequest("title", "content");
 
         mockMvc.perform(post("/api/posts")
                         .contentType(APPLICATION_JSON)
@@ -102,3 +103,4 @@ class PostControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 }
+
