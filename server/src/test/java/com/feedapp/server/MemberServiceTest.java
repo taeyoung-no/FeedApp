@@ -1,14 +1,15 @@
 package com.feedapp.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,5 +36,18 @@ class MemberServiceTest {
 		assertThat(result.getUsername()).isEqualTo(username);
 
 		verify(memberRepository).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("username 중복이면 회원가입 실패")
+	void signupWithDuplicateUsername() {
+		final String username = "username";
+		final String password = "password";
+		when(memberRepository.existsByUsername(username)).thenReturn(true);
+
+		assertThatThrownBy(() -> memberService.signup(username, password))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		verify(memberRepository, never()).save(any(Member.class));
 	}
 }
