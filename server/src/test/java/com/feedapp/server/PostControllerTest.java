@@ -14,12 +14,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(PostController.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtTokenProvider.class})
 class PostControllerTest {
 
 	@Autowired
@@ -27,6 +29,9 @@ class PostControllerTest {
 
 	@Autowired
 	ObjectMapper objectMapper;
+
+	@Autowired
+	JwtTokenProvider jwtTokenProvider;
 
 	@MockitoBean
 	PostService postService;
@@ -71,10 +76,12 @@ class PostControllerTest {
 	void create() throws Exception {
 		final var request = new CreatePostRequest("title", "content", "author");
 		final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+		final String token = jwtTokenProvider.createToken("author");
 		when(postService.create(request.title(), request.content(), request.author()))
 			.thenReturn(new PostResponse(1L, request.title(), request.content(), request.author(), createdAt));
 
 		mockMvc.perform(post("/api/posts")
+				.header("Authorization", "Bearer " + token)
 				.contentType(APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isCreated())
