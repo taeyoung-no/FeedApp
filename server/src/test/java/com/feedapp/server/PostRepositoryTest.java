@@ -19,8 +19,8 @@ class PostRepositoryTest {
 	@Test
 	@DisplayName("게시글이 있으면 생성 시각 내림차순 목록을 반환")
 	void findAllByOrderByCreatedAtDesc() {
-		final LocalDateTime createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
-		final LocalDateTime createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
+		final var createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
+		final var createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
 		final Post saved2 = postRepository.save(new Post(null, "title2", "content2", "author2", createdAt2));
 		final Post saved1 = postRepository.save(new Post(null, "title1", "content1", "author1", createdAt1));
 
