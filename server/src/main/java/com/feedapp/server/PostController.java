@@ -5,6 +5,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,5 +20,11 @@ public class PostController {
 	@ResponseStatus(HttpStatus.OK)
 	public List<PostResponse> findAll() {
 		return postService.findAll();
+	}
+
+	@PostMapping("/api/posts")
+	@ResponseStatus(HttpStatus.CREATED)
+	public PostResponse create(@RequestBody CreatePostRequest request) {
+		return postService.create(request.title(), request.content(), request.author());
 	}
 }

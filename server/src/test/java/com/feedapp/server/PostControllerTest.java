@@ -1,7 +1,9 @@
 package com.feedapp.server;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,11 +17,16 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import tools.jackson.databind.ObjectMapper;
+
 @WebMvcTest(PostController.class)
 class PostControllerTest {
 
 	@Autowired
 	MockMvc mockMvc;
+
+	@Autowired
+	ObjectMapper objectMapper;
 
 	@MockitoBean
 	PostService postService;
@@ -57,5 +64,24 @@ class PostControllerTest {
 		mockMvc.perform(get("/api/posts"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(0));
+	}
+
+	@Test
+	@DisplayName("유효한 요청이면 게시글 작성 성공")
+	void create() throws Exception {
+		final var request = new CreatePostRequest("title", "content", "author");
+		final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+		when(postService.create(request.title(), request.content(), request.author()))
+			.thenReturn(new PostResponse(1L, request.title(), request.content(), request.author(), createdAt));
+
+		mockMvc.perform(post("/api/posts")
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").value(1L))
+				.andExpect(jsonPath("$.title").value(request.title()))
+				.andExpect(jsonPath("$.content").value(request.content()))
+				.andExpect(jsonPath("$.author").value(request.author()))
+				.andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
 	}
 }
