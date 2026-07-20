@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -34,5 +35,26 @@ public class JwtTokenProvider {
 				.expiration(expiry)
 				.signWith(key)
 				.compact();
+	}
+
+	public boolean validate(String token) {
+		try {
+			parseClaims(token);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public String getUsername(String token) {
+		return parseClaims(token).getSubject();
+	}
+
+	private Claims parseClaims(String token) {
+		return Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 }
