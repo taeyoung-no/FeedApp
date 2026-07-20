@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 public class MemberService {
 
 	private final MemberRepository memberRepository;
+	private final JwtTokenProvider jwtTokenProvider;
 
 	public MemberResponse signup(String username, String password) {
 		validateLength(username);
@@ -19,7 +20,7 @@ public class MemberService {
 		return new MemberResponse(saved.getId(), saved.getUsername());
 	}
 
-	public MemberResponse login(String username, String password) {
+	public LoginResponse login(String username, String password) {
 		validateLength(username);
 		validateLength(password);
 		Member member = memberRepository.findByUsername(username)
@@ -27,7 +28,8 @@ public class MemberService {
 		if (!member.getPassword().equals(password)) {
 			throw new IllegalArgumentException("뭔가 잘못 입력함");
 		}
-		return new MemberResponse(member.getId(), member.getUsername());
+		final String token = jwtTokenProvider.createToken(member.getUsername());
+		return new LoginResponse(member.getId(), member.getUsername(), token);
 	}
 
 	private void validateLength(String input) {

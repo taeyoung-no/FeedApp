@@ -22,7 +22,7 @@ public class MemberController {
 
 	@PostMapping("/api/members/login")
 	@ResponseStatus(HttpStatus.OK)
-	public MemberResponse login(@RequestBody LoginRequest request) {
+	public LoginResponse login(@RequestBody LoginRequest request) {
 		return memberService.login(request.username(), request.password());
 	}
 

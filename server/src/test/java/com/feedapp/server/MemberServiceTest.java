@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,6 +22,12 @@ class MemberServiceTest {
 
 	@Mock
 	MemberRepository memberRepository;
+
+	@Spy
+	JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(
+		"12345678901234567890123456789012",
+		3_600_000L
+	);
 
 	@InjectMocks
 	MemberService memberService;
@@ -90,16 +97,17 @@ class MemberServiceTest {
 	}
 
 	@Test
-	@DisplayName("유효한 요청이면 로그인 성공하고 회원 정보 반환")
+	@DisplayName("유효한 요청이면 로그인 성공하고 토큰과 회원 정보 반환")
 	void login() {
 		final String username = "username";
 		final String password = "password";
 		final var member = new Member(1L, username, password);
 		when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
 
-		final MemberResponse result = memberService.login(username, password);
+		final LoginResponse result = memberService.login(username, password);
 		assertThat(result.getId()).isEqualTo(1L);
 		assertThat(result.getUsername()).isEqualTo(username);
+		assertThat(result.getToken()).isNotBlank();
 	}
 
 	@Test
