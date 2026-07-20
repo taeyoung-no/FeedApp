@@ -46,4 +46,21 @@ class PostRepositoryTest {
 
 		assertThat(result).isEmpty();
 	}
+
+	@Test
+	@DisplayName("유효한 요청이면 게시글 정상 저장")
+	void save() {
+		final String title = "title";
+		final String content = "content";
+		final String author = "author";
+		final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+
+		final Post saved = postRepository.save(new Post(null, title, content, author, createdAt));
+
+		assertThat(saved.getId()).isNotNull();
+		assertThat(saved.getTitle()).isEqualTo(title);
+		assertThat(saved.getContent()).isEqualTo(content);
+		assertThat(saved.getAuthor()).isEqualTo(author);
+		assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
+	}
 }
