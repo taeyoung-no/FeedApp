@@ -54,4 +54,32 @@ class MemberControllerTest {
 				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isBadRequest());
 	}
+
+	@Test
+	@DisplayName("유효한 요청이면 로그인 성공")
+	void login() throws Exception {
+		final LoginRequest request = new LoginRequest("username", "password");
+		when(memberService.login(request.username(), request.password()))
+			.thenReturn(new MemberResponse(1L, request.username()));
+
+		mockMvc.perform(post("/api/members/login")
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(1L))
+				.andExpect(jsonPath("$.username").value(request.username()));
+	}
+
+	@Test
+	@DisplayName("서비스가 예외를 던지면 로그인 실패")
+	void loginWhenServiceThrows() throws Exception {
+		final LoginRequest request = new LoginRequest("username", "password");
+		when(memberService.login(request.username(), request.password()))
+			.thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
+
+		mockMvc.perform(post("/api/members/login")
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isBadRequest());
+	}
 }
