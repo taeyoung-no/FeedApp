@@ -50,4 +50,40 @@ class MemberServiceTest {
 
 		verify(memberRepository, never()).save(any(Member.class));
 	}
+
+	@Test
+	@DisplayName("username 길이가 0이면 회원가입 실패")
+	void signupWithEmptyUsername() {
+		assertThatThrownBy(() -> memberService.signup("", "password"))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("username 길이가 8 초과이면 회원가입 실패")
+	void signupWithTooLongUsername() {
+		assertThatThrownBy(() -> memberService.signup("long-username", "password"))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("password 길이가 0이면 회원가입 실패")
+	void signupWithEmptyPassword() {
+		assertThatThrownBy(() -> memberService.signup("username", ""))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("password 길이가 8 초과이면 회원가입 실패")
+	void signupWithTooLongPassword() {
+		assertThatThrownBy(() -> memberService.signup("username", "long-password"))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		verify(memberRepository, never()).save(any(Member.class));
+	}
 }
