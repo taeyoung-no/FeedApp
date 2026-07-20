@@ -84,4 +84,15 @@ class PostControllerTest {
 				.andExpect(jsonPath("$.author").value(request.author()))
 				.andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
 	}
+
+	@Test
+	@DisplayName("토큰이 없으면 게시글 작성 실패")
+	void createWithoutToken() throws Exception {
+		final var request = new CreatePostRequest("title", "content", "author");
+
+		mockMvc.perform(post("/api/posts")
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isUnauthorized());
+	}
 }
