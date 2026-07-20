@@ -20,72 +20,72 @@ import tools.jackson.databind.ObjectMapper;
 @Import({SecurityConfig.class, JwtAuthFilter.class})
 class MemberControllerTest {
 
-	@Autowired
-	MockMvc mockMvc;
+    @Autowired
+    MockMvc mockMvc;
 
-	@Autowired
-	ObjectMapper objectMapper;
+    @Autowired
+    ObjectMapper objectMapper;
 
-	@MockitoBean
-	MemberService memberService;
+    @MockitoBean
+    MemberService memberService;
 
-	@MockitoBean
-	JwtTokenProvider jwtTokenProvider;
+    @MockitoBean
+    JwtTokenProvider jwtTokenProvider;
 
-	@Test
-	@DisplayName("유효한 요청이면 회원가입 성공")
-	void signup() throws Exception {
-		final var request = new SignupRequest("username", "password");
-		when(memberService.signup(request.username(), request.password()))
-			.thenReturn(new MemberResponse(1L, request.username()));
+    @Test
+    @DisplayName("유효한 요청이면 회원가입 성공")
+    void signup() throws Exception {
+        final var request = new SignupRequest("username", "password");
+        when(memberService.signup(request.username(), request.password()))
+                .thenReturn(new MemberResponse(1L, request.username()));
 
-		mockMvc.perform(post("/api/members/signup")
-				.contentType(APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id").value(1L))
-				.andExpect(jsonPath("$.username").value(request.username()));
-	}
+        mockMvc.perform(post("/api/members/signup")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.username").value(request.username()));
+    }
 
-	@Test
-	@DisplayName("서비스가 예외를 던지면 회원가입 실패")
-	void signupWhenServiceThrows() throws Exception {
-		final var request = new SignupRequest("username", "password");
-		when(memberService.signup(request.username(), request.password()))
-			.thenThrow(new IllegalArgumentException("username 중복임"));
+    @Test
+    @DisplayName("서비스가 예외를 던지면 회원가입 실패")
+    void signupWhenServiceThrows() throws Exception {
+        final var request = new SignupRequest("username", "password");
+        when(memberService.signup(request.username(), request.password()))
+                .thenThrow(new IllegalArgumentException("username 중복임"));
 
-		mockMvc.perform(post("/api/members/signup")
-				.contentType(APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isBadRequest());
-	}
+        mockMvc.perform(post("/api/members/signup")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
 
-	@Test
-	@DisplayName("유효한 요청이면 로그인 성공")
-	void login() throws Exception {
-		final var request = new LoginRequest("username", "password");
-		when(memberService.login(request.username(), request.password()))
-			.thenReturn(new LoginResponse(1L, request.username(), "token"));
+    @Test
+    @DisplayName("유효한 요청이면 로그인 성공")
+    void login() throws Exception {
+        final var request = new LoginRequest("username", "password");
+        when(memberService.login(request.username(), request.password()))
+                .thenReturn(new LoginResponse(1L, request.username(), "token"));
 
-		mockMvc.perform(post("/api/members/login")
-				.contentType(APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(1L))
-				.andExpect(jsonPath("$.username").value(request.username()))
-				.andExpect(jsonPath("$.token").value("token"));
-	}
+        mockMvc.perform(post("/api/members/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.username").value(request.username()))
+                .andExpect(jsonPath("$.token").value("token"));
+    }
 
-	@Test
-	@DisplayName("서비스가 예외를 던지면 로그인 실패")
-	void loginWhenServiceThrows() throws Exception {
-		final var request = new LoginRequest("username", "password");
-		when(memberService.login(request.username(), request.password()))
-			.thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
+    @Test
+    @DisplayName("서비스가 예외를 던지면 로그인 실패")
+    void loginWhenServiceThrows() throws Exception {
+        final var request = new LoginRequest("username", "password");
+        when(memberService.login(request.username(), request.password()))
+                .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
 
-		mockMvc.perform(post("/api/members/login")
-				.contentType(APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isBadRequest());
-	}
+        mockMvc.perform(post("/api/members/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
 }

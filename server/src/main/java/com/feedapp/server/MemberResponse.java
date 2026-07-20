@@ -7,6 +7,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MemberResponse {
 
-	private final Long id;
-	private final String username;
+    private final Long id;
+    private final String username;
 }

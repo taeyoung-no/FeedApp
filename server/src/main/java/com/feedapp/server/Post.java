@@ -17,15 +17,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Post {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	private String title;
+    private String title;
 
-	private String content;
+    private String content;
 
-	private String author;
+    private String author;
 
-	private LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 }

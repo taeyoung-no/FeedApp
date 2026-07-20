@@ -14,17 +14,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class PostController {
 
-	private final PostService postService;
+    private final PostService postService;
 
-	@GetMapping("/api/posts")
-	@ResponseStatus(HttpStatus.OK)
-	public List<PostResponse> findAll() {
-		return postService.findAll();
-	}
+    @GetMapping("/api/posts")
+    @ResponseStatus(HttpStatus.OK)
+    public List<PostResponse> findAll() {
+        return postService.findAll();
+    }
 
-	@PostMapping("/api/posts")
-	@ResponseStatus(HttpStatus.CREATED)
-	public PostResponse create(@RequestBody CreatePostRequest request) {
-		return postService.create(request.title(), request.content(), request.author());
-	}
+    @PostMapping("/api/posts")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PostResponse create(@RequestBody CreatePostRequest request) {
+        return postService.create(request.title(), request.content(), request.author());
+    }
 }
