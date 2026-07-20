@@ -19,6 +19,17 @@ public class MemberService {
 		return new MemberResponse(saved.getId(), saved.getUsername());
 	}
 
+	public MemberResponse login(String username, String password) {
+		validateLength(username);
+		validateLength(password);
+		Member member = memberRepository.findByUsername(username)
+			.orElseThrow(() -> new IllegalArgumentException("뭔가 잘못 입력함"));
+		if (!member.getPassword().equals(password)) {
+			throw new IllegalArgumentException("뭔가 잘못 입력함");
+		}
+		return new MemberResponse(member.getId(), member.getUsername());
+	}
+
 	private void validateLength(String input) {
 		if (input == null || input.length() == 0) {
 			throw new IllegalArgumentException("짧아요");

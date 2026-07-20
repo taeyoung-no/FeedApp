@@ -7,6 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -85,5 +87,67 @@ class MemberServiceTest {
 			.isInstanceOf(IllegalArgumentException.class);
 
 		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("유효한 요청이면 로그인 성공하고 회원 정보 반환")
+	void login() {
+		final String username = "username";
+		final String password = "password";
+		final var member = new Member(1L, username, password);
+		when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
+
+		final MemberResponse result = memberService.login(username, password);
+		assertThat(result.getId()).isEqualTo(1L);
+		assertThat(result.getUsername()).isEqualTo(username);
+	}
+
+	@Test
+	@DisplayName("username이 일치하지 않으면 로그인 실패")
+	void loginWithWrongUsername() {
+		final String username = "username";
+		when(memberRepository.findByUsername(username)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> memberService.login(username, "password"))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@DisplayName("password가 일치하지 않으면 로그인 실패")
+	void loginWithWrongPassword() {
+		final String username = "username";
+		when(memberRepository.findByUsername(username))
+			.thenReturn(Optional.of(new Member(1L, username, "password")));
+
+		assertThatThrownBy(() -> memberService.login(username, "wrong"))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@DisplayName("username 길이가 0이면 로그인 실패")
+	void loginWithEmptyUsername() {
+		assertThatThrownBy(() -> memberService.login("", "password"))
+			.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@DisplayName("username 길이가 8 초과이면 로그인 실패")
+	void loginWithTooLongUsername() {
+		assertThatThrownBy(() -> memberService.login("long-username", "password"))
+			.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@DisplayName("password 길이가 0이면 로그인 실패")
+	void loginWithEmptyPassword() {
+		assertThatThrownBy(() -> memberService.login("username", ""))
+			.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@DisplayName("password 길이가 8 초과이면 로그인 실패")
+	void loginWithTooLongPassword() {
+		assertThatThrownBy(() -> memberService.login("username", "long-password"))
+			.isInstanceOf(IllegalArgumentException.class);
 	}
 }
