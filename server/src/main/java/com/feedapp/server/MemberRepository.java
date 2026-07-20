@@ -1,8 +1,8 @@
 package com.feedapp.server;
 
-public interface MemberRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
 
-	Member save(Member member);
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
 	boolean existsByUsername(String username);
 }
