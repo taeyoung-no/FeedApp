@@ -30,26 +30,24 @@ class MemberControllerTest {
 	@Test
 	@DisplayName("유효한 요청이면 회원가입 성공")
 	void signup() throws Exception {
-		when(memberService.signup("username", "password"))
-			.thenReturn(new MemberResponse(1L, "username"));
-
 		final SignupRequest request = new SignupRequest("username", "password");
+		when(memberService.signup(request.username(), request.password()))
+			.thenReturn(new MemberResponse(1L, request.username()));
 
 		mockMvc.perform(post("/api/members/signup")
 				.contentType(APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.id").value(1L))
-				.andExpect(jsonPath("$.username").value("username"));
+				.andExpect(jsonPath("$.username").value(request.username()));
 	}
 
 	@Test
 	@DisplayName("서비스가 예외를 던지면 회원가입 실패")
 	void signupWhenServiceThrows() throws Exception {
-		when(memberService.signup("username", "password"))
-			.thenThrow(new IllegalArgumentException("username 중복임"));
-
 		final SignupRequest request = new SignupRequest("username", "password");
+		when(memberService.signup(request.username(), request.password()))
+			.thenThrow(new IllegalArgumentException("username 중복임"));
 
 		mockMvc.perform(post("/api/members/signup")
 				.contentType(APPLICATION_JSON)
