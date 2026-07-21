@@ -2,6 +2,7 @@ package com.feedapp.server;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -31,6 +32,8 @@ public class JwtTokenProvider {
         final var expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .subject(username)
+                .id(UUID.randomUUID().toString())
+                .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -48,6 +51,14 @@ public class JwtTokenProvider {
 
     public String getUsername(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public String getType(String token) {
+        return parseClaims(token).get("type", String.class);
+    }
+
+    public String getJti(String token) {
+        return parseClaims(token).getId();
     }
 
     private Claims parseClaims(String token) {

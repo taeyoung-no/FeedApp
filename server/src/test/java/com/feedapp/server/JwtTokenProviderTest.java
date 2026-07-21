@@ -1,6 +1,9 @@
 package com.feedapp.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,35 @@ class JwtTokenProviderTest {
         final String token = jwtTokenProvider.createToken("username");
 
         assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("username");
+    }
+
+    @Test
+    @DisplayName("유효한 토큰이면 type(access) 정상 반환")
+    void getType() {
+        final String token = jwtTokenProvider.createToken("username");
+
+        assertThat(jwtTokenProvider.getType(token)).isEqualTo("access");
+    }
+
+    @Test
+    @DisplayName("유효한 토큰이면 uuid 형식인 jti 정상 반환")
+    void getJti() {
+        final String token = jwtTokenProvider.createToken("username");
+
+        final String jti = jwtTokenProvider.getJti(token);
+
+        assertThat(jti).isNotBlank();
+        assertThatCode(() -> UUID.fromString(jti)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("토큰 발급할 때마다 jti 다름")
+    void jtiIsUnique() {
+        final String token1 = jwtTokenProvider.createToken("username");
+        final String token2 = jwtTokenProvider.createToken("username");
+
+        assertThat(jwtTokenProvider.getJti(token1))
+                .isNotEqualTo(jwtTokenProvider.getJti(token2));
     }
 
     @Test
