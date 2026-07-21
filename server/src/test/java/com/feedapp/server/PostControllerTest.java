@@ -76,7 +76,7 @@ class PostControllerTest {
         final String username = "author";
         final var request = new CreatePostRequest("title", "content");
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final String token = jwtTokenProvider.createToken(username);
+        final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.create(request.title(), request.content(), username))
                 .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt));
 

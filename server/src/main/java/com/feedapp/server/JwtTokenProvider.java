@@ -27,13 +27,27 @@ public class JwtTokenProvider {
         this.expirationMs = expirationMs;
     }
 
-    public String createToken(String username) {
+    public String createAccessToken(String username) {
         final var now = new Date();
         final var expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .subject(username)
                 .id(UUID.randomUUID().toString())
                 .claim("type", "access")
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(key)
+                .compact();
+    }
+
+    public String createRefreshToken(String username) {
+        final var now = new Date();
+        final var expiry = new Date(now.getTime() + expirationMs);
+        return Jwts.builder()
+                .subject(username)
+                .id(UUID.randomUUID().toString())
+                .claim("type", "refresh")
+                .claim("sid", UUID.randomUUID().toString())
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -59,6 +73,10 @@ public class JwtTokenProvider {
 
     public String getJti(String token) {
         return parseClaims(token).getId();
+    }
+
+    public String getSid(String token) {
+        return parseClaims(token).get("sid", String.class);
     }
 
     private Claims parseClaims(String token) {

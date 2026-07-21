@@ -16,33 +16,33 @@ class JwtTokenProviderTest {
     );
 
     @Test
-    @DisplayName("유효한 토큰이면 검증 성공")
+    @DisplayName("유효한 엑세스 토큰이면 검증 성공")
     void validate() {
-        final String token = jwtTokenProvider.createToken("username");
+        final String token = jwtTokenProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.validate(token)).isTrue();
     }
 
     @Test
-    @DisplayName("유효한 토큰이면 username 정상 반환")
+    @DisplayName("유효한 엑세스 토큰이면 username 정상 반환")
     void getUsername() {
-        final String token = jwtTokenProvider.createToken("username");
+        final String token = jwtTokenProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("username");
     }
 
     @Test
-    @DisplayName("유효한 토큰이면 type(access) 정상 반환")
+    @DisplayName("유효한 엑세스 토큰이면 type(access) 정상 반환")
     void getType() {
-        final String token = jwtTokenProvider.createToken("username");
+        final String token = jwtTokenProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.getType(token)).isEqualTo("access");
     }
 
     @Test
-    @DisplayName("유효한 토큰이면 uuid 형식인 jti 정상 반환")
+    @DisplayName("유효한 엑세스 토큰이면 uuid 형식인 jti 정상 반환")
     void getJti() {
-        final String token = jwtTokenProvider.createToken("username");
+        final String token = jwtTokenProvider.createAccessToken("username");
 
         final String jti = jwtTokenProvider.getJti(token);
 
@@ -51,13 +51,71 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("토큰 발급할 때마다 jti 다름")
+    @DisplayName("엑세스 토큰 발급할 때마다 jti 다름")
     void jtiIsUnique() {
-        final String token1 = jwtTokenProvider.createToken("username");
-        final String token2 = jwtTokenProvider.createToken("username");
+        final String token1 = jwtTokenProvider.createAccessToken("username");
+        final String token2 = jwtTokenProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.getJti(token1))
                 .isNotEqualTo(jwtTokenProvider.getJti(token2));
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 type(refresh) 정상 반환")
+    void getRefreshTokenType() {
+        final String token = jwtTokenProvider.createRefreshToken("username");
+
+        assertThat(jwtTokenProvider.getType(token)).isEqualTo("refresh");
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 username 정상 반환")
+    void getRefreshTokenUserType() {
+        final String token = jwtTokenProvider.createRefreshToken("username");
+
+        assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("username");
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 uuid 형식인 jti 정상 반환")
+    void createRefreshToken_hasJtiAsUuid() {
+        final String token = jwtTokenProvider.createRefreshToken("username");
+
+        final String jti = jwtTokenProvider.getJti(token);
+
+        assertThat(jti).isNotBlank();
+        assertThatCode(() -> UUID.fromString(jti)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 uuid 형식인 sid 정상 반환")
+    void createRefreshToken_hasSidAsUuid() {
+        final String token = jwtTokenProvider.createRefreshToken("username");
+
+        final String sid = jwtTokenProvider.getSid(token);
+
+        assertThat(sid).isNotBlank();
+        assertThatCode(() -> UUID.fromString(sid)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰 발급할 때마다 jti 다름")
+    void createRefreshToken_jtiIsUnique() {
+        final String token1 = jwtTokenProvider.createRefreshToken("username");
+        final String token2 = jwtTokenProvider.createRefreshToken("username");
+
+        assertThat(jwtTokenProvider.getJti(token1))
+                .isNotEqualTo(jwtTokenProvider.getJti(token2));
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰 발급할 때마다 sid 다름")
+    void createRefreshToken_sidIsUnique() {
+        final String token1 = jwtTokenProvider.createRefreshToken("username");
+        final String token2 = jwtTokenProvider.createRefreshToken("username");
+
+        assertThat(jwtTokenProvider.getSid(token1))
+                .isNotEqualTo(jwtTokenProvider.getSid(token2));
     }
 
     @Test
@@ -73,7 +131,7 @@ class JwtTokenProviderTest {
                 "09876543210987654321098765432109",
                 3_600_000L
         );
-        final String token = otherProvider.createToken("username");
+        final String token = otherProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.validate(token)).isFalse();
     }
@@ -85,7 +143,7 @@ class JwtTokenProviderTest {
                 "12345678901234567890123456789012",
                 1L
         );
-        final String token = shortLived.createToken("username");
+        final String token = shortLived.createAccessToken("username");
         Thread.sleep(100);
 
         assertThat(shortLived.validate(token)).isFalse();

@@ -28,7 +28,7 @@ public class MemberService {
         if (!member.getPassword().equals(password)) {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
-        final String token = jwtTokenProvider.createToken(member.getUsername());
+        final String token = jwtTokenProvider.createAccessToken(member.getUsername());
         return new LoginResponse(member.getId(), member.getUsername(), token);
     }
 
