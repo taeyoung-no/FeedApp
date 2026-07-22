@@ -13,6 +13,7 @@ import java.util.List;
 import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.SecurityConfig;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +85,7 @@ class PostControllerTest {
                 .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt));
 
         mockMvc.perform(post("/api/posts")
-                        .header("Authorization", "Bearer " + token)
+                        .cookie(new Cookie("accessToken", token))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -113,7 +114,7 @@ class PostControllerTest {
         final String token = jwtTokenProvider.createRefreshToken("author");
 
         mockMvc.perform(post("/api/posts")
-                        .header("Authorization", "Bearer " + token)
+                        .cookie(new Cookie("refreshToken", token))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());

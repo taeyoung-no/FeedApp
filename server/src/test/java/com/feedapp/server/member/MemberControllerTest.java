@@ -3,12 +3,14 @@ package com.feedapp.server.member;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.SecurityConfig;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +70,7 @@ class MemberControllerTest {
     void login() throws Exception {
         final var request = new LoginRequest("username", "password");
         when(memberService.login(request.username(), request.password()))
-                .thenReturn(new LoginResponse(1L, request.username(), "access-token", "refresh-token"));
+                .thenReturn(new LoginResult(1L, request.username(), "access-token", "refresh-token"));
 
         mockMvc.perform(post("/api/members/login")
                         .contentType(APPLICATION_JSON)
@@ -76,8 +78,10 @@ class MemberControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.username").value(request.username()))
-                .andExpect(jsonPath("$.accessToken").value("access-token"))
-                .andExpect(jsonPath("$.refreshToken").value("refresh-token"));
+                .andExpect(cookie().value("accessToken", "access-token"))
+                .andExpect(cookie().httpOnly("accessToken", true))
+                .andExpect(cookie().value("refreshToken", "refresh-token"))
+                .andExpect(cookie().httpOnly("refreshToken", true));
     }
 
     @Test
@@ -101,11 +105,12 @@ class MemberControllerTest {
                 .thenReturn(new TokenResponse("new-access-token", "new-refresh-token"));
 
         mockMvc.perform(post("/api/members/refresh")
-                        .contentType(APPLICATION_JSON)
-                        .content(refreshToken))
+                        .cookie(new Cookie("refreshToken", refreshToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("new-access-token"))
-                .andExpect(jsonPath("$.refreshToken").value("new-refresh-token"));
+                .andExpect(cookie().value("accessToken", "new-access-token"))
+                .andExpect(cookie().httpOnly("accessToken", true))
+                .andExpect(cookie().value("refreshToken", "new-refresh-token"))
+                .andExpect(cookie().httpOnly("refreshToken", true));
     }
 
     @Test
@@ -116,8 +121,7 @@ class MemberControllerTest {
                 .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
 
         mockMvc.perform(post("/api/members/refresh")
-                        .contentType(APPLICATION_JSON)
-                        .content(refreshToken))
+                        .cookie(new Cookie("refreshToken", refreshToken)))
                 .andExpect(status().isBadRequest());
     }
 }

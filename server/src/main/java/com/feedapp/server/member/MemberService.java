@@ -23,7 +23,7 @@ public class MemberService {
         return new MemberResponse(saved.getId(), saved.getUsername());
     }
 
-    public LoginResponse login(String username, String password) {
+    public LoginResult login(String username, String password) {
         validateLength(username);
         validateLength(password);
         Member member = memberRepository.findByUsername(username)
@@ -32,7 +32,7 @@ public class MemberService {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
         final TokenResponse tokens = issueTokens(member.getUsername(), null);
-        return new LoginResponse(
+        return new LoginResult(
                 member.getId(),
                 member.getUsername(),
                 tokens.getAccessToken(),

@@ -113,7 +113,7 @@ class MemberServiceTest {
         final var member = new Member(1L, username, password);
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
 
-        final LoginResponse result = memberService.login(username, password);
+        final LoginResult result = memberService.login(username, password);
 
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getUsername()).isEqualTo(username);
