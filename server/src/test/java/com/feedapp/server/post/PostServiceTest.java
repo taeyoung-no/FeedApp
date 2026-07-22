@@ -1,13 +1,18 @@
 package com.feedapp.server.post;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import com.feedapp.server.common.ForbiddenException;
+import com.feedapp.server.common.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,5 +83,45 @@ class PostServiceTest {
         assertThat(result.getCreatedAt()).isEqualTo(createdAt);
 
         verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 게시글 삭제 성공")
+    void deletePost() {
+        final Long id = 1L;
+        final String author = "author";
+        final var post = new Post(id, "title", "content", author, LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+
+        postService.delete(id, author);
+
+        verify(postRepository).delete(post);
+    }
+
+    @Test
+    @DisplayName("게시글이 없으면 삭제 실패")
+    void deletePostWhenNotFound() {
+        final Long id = 1L;
+        when(postRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.delete(id, "author"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("게시글 없음");
+
+        verify(postRepository, never()).delete(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 삭제 실패")
+    void deletePostWhenNotAuthor() {
+        final Long id = 1L;
+        final var post = new Post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.delete(id, "other"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("권한 없음");
+
+        verify(postRepository, never()).delete(any(Post.class));
     }
 }

@@ -63,4 +63,16 @@ class PostRepositoryTest {
         assertThat(saved.getAuthor()).isEqualTo(author);
         assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
     }
+
+    @Test
+    @DisplayName("저장된 게시글 삭제")
+    void delete() {
+        final Post saved = postRepository.save(
+                new Post(null, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0))
+        );
+
+        postRepository.delete(saved);
+
+        assertThat(postRepository.findById(saved.getId())).isEmpty();
+    }
 }

@@ -27,4 +27,16 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleConflictException(ConflictException exception) {
         return new ErrorResponse(exception.getMessage());
     }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotFoundException(NotFoundException exception) {
+        return new ErrorResponse(exception.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleForbiddenException(ForbiddenException exception) {
+        return new ErrorResponse(exception.getMessage());
+    }
 }
