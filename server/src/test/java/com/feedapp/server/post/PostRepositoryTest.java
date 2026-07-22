@@ -48,6 +48,28 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("id로 게시글 조회")
+    void findById() {
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final Post saved = postRepository.save(new Post(null, "title", "content", "author", createdAt));
+
+        final var result = postRepository.findById(saved.getId());
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(saved.getId());
+        assertThat(result.get().getTitle()).isEqualTo("title");
+        assertThat(result.get().getContent()).isEqualTo("content");
+        assertThat(result.get().getAuthor()).isEqualTo("author");
+        assertThat(result.get().getCreatedAt()).isEqualTo(createdAt);
+    }
+
+    @Test
+    @DisplayName("id에 해당하는 게시글이 없으면 비어 있음")
+    void findByIdWhenNotFound() {
+        assertThat(postRepository.findById(1L)).isEmpty();
+    }
+
+    @Test
     @DisplayName("유효한 요청이면 게시글 정상 저장")
     void save() {
         final String title = "title";

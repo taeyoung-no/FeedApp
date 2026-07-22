@@ -81,6 +81,35 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("게시글이 있으면 id로 상세 조회")
+    void findById() throws Exception {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postService.findById(id)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt)
+        );
+
+        mockMvc.perform(get("/api/posts/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.title").value("title"))
+                .andExpect(jsonPath("$.content").value("content"))
+                .andExpect(jsonPath("$.author").value("author"))
+                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
+    }
+
+    @Test
+    @DisplayName("게시글이 없으면 상세 조회 실패")
+    void findByIdWhenNotFound() throws Exception {
+        final Long id = 1L;
+        when(postService.findById(id)).thenThrow(new NotFoundException("게시글 없음"));
+
+        mockMvc.perform(get("/api/posts/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("게시글 없음"));
+    }
+
+    @Test
     @DisplayName("유효한 요청이면 토큰 username으로 게시글 작성 성공")
     void create() throws Exception {
         final String username = "author";

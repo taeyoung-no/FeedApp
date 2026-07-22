@@ -25,6 +25,12 @@ public class PostController {
         return postService.findAll();
     }
 
+    @GetMapping("/api/posts/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public PostResponse findById(@PathVariable Long id) {
+        return postService.findById(id);
+    }
+
     @PostMapping("/api/posts")
     @ResponseStatus(HttpStatus.CREATED)
     public PostResponse create(

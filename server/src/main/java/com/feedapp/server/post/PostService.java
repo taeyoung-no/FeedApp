@@ -20,6 +20,12 @@ public class PostService {
                 .toList();
     }
 
+    public PostResponse findById(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("게시글 없음"));
+        return toResponse(post);
+    }
+
     public PostResponse create(String title, String content, String author) {
         Post saved = postRepository.save(new Post(null, title, content, author, LocalDateTime.now()));
         return toResponse(saved);

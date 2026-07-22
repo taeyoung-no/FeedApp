@@ -65,6 +65,35 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("게시글이 있으면 id로 상세 조회")
+    void findById() {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postRepository.findById(id)).thenReturn(Optional.of(
+                new Post(id, "title", "content", "author", createdAt)
+        ));
+
+        final PostResponse result = postService.findById(id);
+
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getTitle()).isEqualTo("title");
+        assertThat(result.getContent()).isEqualTo("content");
+        assertThat(result.getAuthor()).isEqualTo("author");
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+    }
+
+    @Test
+    @DisplayName("게시글이 없으면 상세 조회 실패")
+    void findByIdWhenNotFound() {
+        final Long id = 1L;
+        when(postRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.findById(id))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("게시글 없음");
+    }
+
+    @Test
     @DisplayName("유효한 요청이면 게시글 저장하고 정보 반환")
     void create() {
         final String title = "title";
