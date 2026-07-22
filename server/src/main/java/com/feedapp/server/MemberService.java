@@ -29,11 +29,17 @@ public class MemberService {
         if (!member.getPassword().equals(password)) {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
-        return issueTokens(member);
+        final TokenResponse tokens = issueTokens(member.getUsername(), null);
+        return new LoginResponse(
+                member.getId(),
+                member.getUsername(),
+                tokens.getAccessToken(),
+                tokens.getRefreshToken()
+        );
     }
 
-    public LoginResponse refresh(String refreshToken) {
-        if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
+    public TokenResponse refresh(String refreshToken) {
+        if (!jwtTokenProvider.validate(refreshToken) || !"refresh".equals(jwtTokenProvider.getType(refreshToken))) {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
         final String sid = jwtTokenProvider.getSid(refreshToken);
@@ -44,30 +50,19 @@ public class MemberService {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
         final String username = jwtTokenProvider.getUsername(refreshToken);
-        final Member member = memberRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("뭔가 잘못 입력함"));
-        return issueTokens(member, sid);
+        return issueTokens(username, sid);
     }
 
-    private LoginResponse issueTokens(Member member) {
-        return issueTokens(member, null);
-    }
-
-    private LoginResponse issueTokens(Member member, String sid) {
-        final String accessToken = jwtTokenProvider.createAccessToken(member.getUsername());
-        final String refreshToken = sid == null
-                ? jwtTokenProvider.createRefreshToken(member.getUsername())
-                : jwtTokenProvider.createRefreshToken(member.getUsername(), sid);
+    private TokenResponse issueTokens(String username, String sid) {
+        final String accessToken = jwtTokenProvider.createAccessToken(username);
+        final String newRefreshToken = sid == null
+                ? jwtTokenProvider.createRefreshToken(username)
+                : jwtTokenProvider.createRefreshToken(username, sid);
         refreshTokenStore.save(
-                jwtTokenProvider.getSid(refreshToken),
-                jwtTokenProvider.getJti(refreshToken)
+                jwtTokenProvider.getSid(newRefreshToken),
+                jwtTokenProvider.getJti(newRefreshToken)
         );
-        return new LoginResponse(
-                member.getId(),
-                member.getUsername(),
-                accessToken,
-                refreshToken
-        );
+        return new TokenResponse(accessToken, newRefreshToken);
     }
 
     private void validateLength(String input) {

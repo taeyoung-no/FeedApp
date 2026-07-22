@@ -28,7 +28,7 @@ public class MemberController {
 
     @PostMapping("/api/members/refresh")
     @ResponseStatus(HttpStatus.OK)
-    public LoginResponse refresh(@RequestBody String refreshToken) {
+    public TokenResponse refresh(@RequestBody String refreshToken) {
         return memberService.refresh(refreshToken);
     }
 

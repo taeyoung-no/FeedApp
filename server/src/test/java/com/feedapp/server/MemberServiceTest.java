@@ -128,17 +128,13 @@ class MemberServiceTest {
     @DisplayName("유효한 리프레시 토큰이면 새 액세스/리프레시 토큰 발급, jti 갱신")
     void refresh() {
         final String username = "username";
-        final var member = new Member(1L, username, "password");
         final String oldRefreshToken = jwtTokenProvider.createRefreshToken(username);
         final String sid = jwtTokenProvider.getSid(oldRefreshToken);
         final String oldJti = jwtTokenProvider.getJti(oldRefreshToken);
         when(refreshTokenStore.find(sid)).thenReturn(Optional.of(oldJti));
-        when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
 
-        final LoginResponse result = memberService.refresh(oldRefreshToken);
+        final TokenResponse result = memberService.refresh(oldRefreshToken);
 
-        assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getUsername()).isEqualTo(username);
         assertThat(jwtTokenProvider.getType(result.getAccessToken())).isEqualTo("access");
         assertThat(jwtTokenProvider.getType(result.getRefreshToken())).isEqualTo("refresh");
         assertThat(jwtTokenProvider.getUsername(result.getAccessToken())).isEqualTo(username);

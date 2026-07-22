@@ -95,14 +95,12 @@ class MemberControllerTest {
     void refresh() throws Exception {
         final String refreshToken = "refresh-token";
         when(memberService.refresh(refreshToken))
-                .thenReturn(new LoginResponse(1L, "username", "new-access-token", "new-refresh-token"));
+                .thenReturn(new TokenResponse("new-access-token", "new-refresh-token"));
 
         mockMvc.perform(post("/api/members/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(refreshToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.username").value("username"))
                 .andExpect(jsonPath("$.accessToken").value("new-access-token"))
                 .andExpect(jsonPath("$.refreshToken").value("new-refresh-token"));
     }
