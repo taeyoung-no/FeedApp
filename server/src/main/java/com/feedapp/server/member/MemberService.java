@@ -42,14 +42,14 @@ public class MemberService {
 
     public TokenResponse refresh(String refreshToken) {
         if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
-            throw new UnauthorizedException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("유효하지 않은 인증 정보임");
         }
         final String sid = jwtTokenProvider.getSid(refreshToken);
         final String jti = jwtTokenProvider.getJti(refreshToken);
         final String storedJti = refreshTokenStore.find(sid)
-                .orElseThrow(() -> new UnauthorizedException("뭔가 잘못 입력함"));
+                .orElseThrow(() -> new UnauthorizedException("유효하지 않은 인증 정보임"));
         if (!storedJti.equals(jti)) {
-            throw new UnauthorizedException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("유효하지 않은 인증 정보임");
         }
         final String username = jwtTokenProvider.getUsername(refreshToken);
         return issueTokens(username, sid);
@@ -57,7 +57,7 @@ public class MemberService {
 
     public void logout(String refreshToken) {
         if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
-            throw new UnauthorizedException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("유효하지 않은 인증 정보임");
         }
         refreshTokenStore.delete(jwtTokenProvider.getSid(refreshToken));
     }

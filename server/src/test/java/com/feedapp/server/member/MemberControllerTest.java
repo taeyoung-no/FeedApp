@@ -120,7 +120,7 @@ class MemberControllerTest {
     void refreshWhenServiceThrows() throws Exception {
         final String refreshToken = "invalid-token";
         when(memberService.refresh(refreshToken))
-                .thenThrow(new UnauthorizedException("뭔가 잘못 입력함"));
+                .thenThrow(new UnauthorizedException("유효하지 않은 인증 정보임"));
 
         mockMvc.perform(post("/api/members/refresh")
                         .cookie(new Cookie("refreshToken", refreshToken)))
@@ -145,7 +145,7 @@ class MemberControllerTest {
     @DisplayName("인증 실패면 로그아웃 실패")
     void logoutWhenServiceThrows() throws Exception {
         final String refreshToken = "invalid-token";
-        doThrow(new UnauthorizedException("뭔가 잘못 입력함"))
+        doThrow(new UnauthorizedException("유효하지 않은 인증 정보임"))
                 .when(memberService).logout(refreshToken);
 
         mockMvc.perform(post("/api/members/logout")
