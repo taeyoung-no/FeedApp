@@ -3,11 +3,15 @@ package com.feedapp.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +26,9 @@ class MemberServiceTest {
 
     @Mock
     MemberRepository memberRepository;
+
+    @Mock
+    RefreshTokenStore refreshTokenStore;
 
     @Spy
     JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(
@@ -97,7 +104,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("유효한 요청이면 로그인 성공하고 토큰과 회원 정보 반환")
+    @DisplayName("유효한 요청이면 로그인 성공, 액세스/리프레시 토큰과 회원 정보를 반환, sid-jti 저장")
     void login() {
         final String username = "username";
         final String password = "password";
@@ -105,9 +112,85 @@ class MemberServiceTest {
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
 
         final LoginResponse result = memberService.login(username, password);
+
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getUsername()).isEqualTo(username);
-        assertThat(result.getToken()).isNotBlank();
+        assertThat(jwtTokenProvider.getType(result.getAccessToken())).isEqualTo("access");
+        assertThat(jwtTokenProvider.getType(result.getRefreshToken())).isEqualTo("refresh");
+        assertThat(jwtTokenProvider.getUsername(result.getRefreshToken())).isEqualTo(username);
+
+        final String sid = jwtTokenProvider.getSid(result.getRefreshToken());
+        final String jti = jwtTokenProvider.getJti(result.getRefreshToken());
+        verify(refreshTokenStore).save(sid, jti);
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 새 액세스/리프레시 토큰 발급, jti 갱신")
+    void refresh() {
+        final String username = "username";
+        final var member = new Member(1L, username, "password");
+        final String oldRefreshToken = jwtTokenProvider.createRefreshToken(username);
+        final String sid = jwtTokenProvider.getSid(oldRefreshToken);
+        final String oldJti = jwtTokenProvider.getJti(oldRefreshToken);
+        when(refreshTokenStore.find(sid)).thenReturn(Optional.of(oldJti));
+        when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
+
+        final LoginResponse result = memberService.refresh(oldRefreshToken);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getUsername()).isEqualTo(username);
+        assertThat(jwtTokenProvider.getType(result.getAccessToken())).isEqualTo("access");
+        assertThat(jwtTokenProvider.getType(result.getRefreshToken())).isEqualTo("refresh");
+        assertThat(jwtTokenProvider.getUsername(result.getAccessToken())).isEqualTo(username);
+        assertThat(jwtTokenProvider.getSid(result.getRefreshToken())).isEqualTo(sid);
+        assertThat(jwtTokenProvider.getJti(result.getRefreshToken())).isNotEqualTo(oldJti);
+        verify(refreshTokenStore).save(eq(sid), argThat((jti) -> !jti.equals(oldJti)));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 리프레시 토큰이면 재발급 실패")
+    void refreshWithInvalidToken() {
+        assertThatThrownBy(() -> memberService.refresh("invalid-token"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).save(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("액세스 토큰으로 재발급하면 실패")
+    void refreshWithAccessToken() {
+        final String accessToken = jwtTokenProvider.createAccessToken("username");
+
+        assertThatThrownBy(() -> memberService.refresh(accessToken))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).save(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("저장소에 sid가 없으면 재발급 실패")
+    void refreshWhenSessionMissing() {
+        final String refreshToken = jwtTokenProvider.createRefreshToken("username");
+        when(refreshTokenStore.find(jwtTokenProvider.getSid(refreshToken)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.refresh(refreshToken))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).save(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("저장된 jti와 다르면 재발급 실패")
+    void refreshWithMismatchedJti() {
+        final String refreshToken = jwtTokenProvider.createRefreshToken("username");
+        final String sid = jwtTokenProvider.getSid(refreshToken);
+        when(refreshTokenStore.find(sid)).thenReturn(Optional.of(UUID.randomUUID().toString()));
+
+        assertThatThrownBy(() -> memberService.refresh(refreshToken))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
 
     @Test

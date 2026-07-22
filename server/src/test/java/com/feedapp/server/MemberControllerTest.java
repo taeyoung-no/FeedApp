@@ -65,7 +65,7 @@ class MemberControllerTest {
     void login() throws Exception {
         final var request = new LoginRequest("username", "password");
         when(memberService.login(request.username(), request.password()))
-                .thenReturn(new LoginResponse(1L, request.username(), "token"));
+                .thenReturn(new LoginResponse(1L, request.username(), "access-token", "refresh-token"));
 
         mockMvc.perform(post("/api/members/login")
                         .contentType(APPLICATION_JSON)
@@ -73,7 +73,8 @@ class MemberControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.username").value(request.username()))
-                .andExpect(jsonPath("$.token").value("token"));
+                .andExpect(jsonPath("$.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.refreshToken").value("refresh-token"));
     }
 
     @Test

@@ -41,13 +41,17 @@ public class JwtTokenProvider {
     }
 
     public String createRefreshToken(String username) {
+        return createRefreshToken(username, UUID.randomUUID().toString());
+    }
+
+    public String createRefreshToken(String username, String sid) {
         final var now = new Date();
         final var expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .subject(username)
                 .id(UUID.randomUUID().toString())
                 .claim("type", "refresh")
-                .claim("sid", UUID.randomUUID().toString())
+                .claim("sid", sid)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)

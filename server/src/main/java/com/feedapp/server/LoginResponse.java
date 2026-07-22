@@ -9,5 +9,6 @@ public class LoginResponse {
 
     private final Long id;
     private final String username;
-    private final String token;
+    private final String accessToken;
+    private final String refreshToken;
 }
