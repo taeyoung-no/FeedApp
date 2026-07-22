@@ -105,5 +105,18 @@ class PostControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("리프레시 토큰이면 게시글 작성 실패")
+    void createWithRefreshToken() throws Exception {
+        final var request = new CreatePostRequest("title", "content");
+        final String token = jwtTokenProvider.createRefreshToken("author");
+
+        mockMvc.perform(post("/api/posts")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
 }
 
