@@ -89,4 +89,34 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("유효한 요청이면 토큰 재발급 성공")
+    void refresh() throws Exception {
+        final String refreshToken = "refresh-token";
+        when(memberService.refresh(refreshToken))
+                .thenReturn(new LoginResponse(1L, "username", "new-access-token", "new-refresh-token"));
+
+        mockMvc.perform(post("/api/members/refresh")
+                        .contentType(APPLICATION_JSON)
+                        .content(refreshToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.username").value("username"))
+                .andExpect(jsonPath("$.accessToken").value("new-access-token"))
+                .andExpect(jsonPath("$.refreshToken").value("new-refresh-token"));
+    }
+
+    @Test
+    @DisplayName("서비스가 예외를 던지면 토큰 재발급 실패")
+    void refreshWhenServiceThrows() throws Exception {
+        final String refreshToken = "invalid-token";
+        when(memberService.refresh(refreshToken))
+                .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
+
+        mockMvc.perform(post("/api/members/refresh")
+                        .contentType(APPLICATION_JSON)
+                        .content(refreshToken))
+                .andExpect(status().isBadRequest());
+    }
 }

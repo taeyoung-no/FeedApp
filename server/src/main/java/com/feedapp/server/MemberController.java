@@ -26,6 +26,12 @@ public class MemberController {
         return memberService.login(request.username(), request.password());
     }
 
+    @PostMapping("/api/members/refresh")
+    @ResponseStatus(HttpStatus.OK)
+    public LoginResponse refresh(@RequestBody String refreshToken) {
+        return memberService.refresh(refreshToken);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public void handleIllegalArgumentException(IllegalArgumentException exception) {
