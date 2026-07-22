@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

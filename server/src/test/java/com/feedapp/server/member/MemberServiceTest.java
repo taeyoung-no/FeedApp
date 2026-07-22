@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.member;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.feedapp.server.auth.JwtTokenProvider;
+import com.feedapp.server.auth.RefreshTokenStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

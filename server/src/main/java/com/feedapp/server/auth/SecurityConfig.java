@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.auth;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

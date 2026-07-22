@@ -1,5 +1,7 @@
-package com.feedapp.server;
+package com.feedapp.server.member;
 
+import com.feedapp.server.auth.JwtTokenProvider;
+import com.feedapp.server.auth.RefreshTokenStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

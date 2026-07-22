@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.auth;
 
 import java.io.IOException;
 import java.util.List;

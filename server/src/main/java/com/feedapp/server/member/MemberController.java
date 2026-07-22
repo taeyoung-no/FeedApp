@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.member;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.post;
 
 import java.util.List;
 

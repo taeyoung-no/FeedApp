@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.post;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -10,6 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.feedapp.server.auth.JwtAuthFilter;
+import com.feedapp.server.auth.JwtTokenProvider;
+import com.feedapp.server.auth.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

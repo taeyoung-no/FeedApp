@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.member;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

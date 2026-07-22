@@ -1,4 +1,4 @@
-package com.feedapp.server;
+package com.feedapp.server.member;
 
 public record LoginRequest(String username, String password) {
 }
