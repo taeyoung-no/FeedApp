@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.SecurityConfig;
+import com.feedapp.server.common.GlobalExceptionHandler;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(MemberController.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class})
+@Import({SecurityConfig.class, JwtAuthFilter.class, GlobalExceptionHandler.class})
 class MemberControllerTest {
 
     @Autowired
