@@ -12,16 +12,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public void handleIllegalArgumentException(IllegalArgumentException exception) {
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException exception) {
+        return new ErrorResponse(exception.getMessage());
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public void handleUnauthorizedException(UnauthorizedException exception) {
+    public ErrorResponse handleUnauthorizedException(UnauthorizedException exception) {
+        return new ErrorResponse(exception.getMessage());
     }
 
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public void handleConflictException(ConflictException exception) {
+    public ErrorResponse handleConflictException(ConflictException exception) {
+        return new ErrorResponse(exception.getMessage());
     }
 }

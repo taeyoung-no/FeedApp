@@ -65,7 +65,8 @@ class MemberControllerTest {
         mockMvc.perform(post("/api/members/signup")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("username 중복임"));
     }
 
     @Test
@@ -97,7 +98,8 @@ class MemberControllerTest {
         mockMvc.perform(post("/api/members/login")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("뭔가 잘못 입력함"));
     }
 
     @Test
@@ -125,7 +127,8 @@ class MemberControllerTest {
 
         mockMvc.perform(post("/api/members/refresh")
                         .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("유효하지 않은 인증 정보임"));
     }
 
     @Test
@@ -151,6 +154,7 @@ class MemberControllerTest {
 
         mockMvc.perform(post("/api/members/logout")
                         .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("유효하지 않은 인증 정보임"));
     }
 }
