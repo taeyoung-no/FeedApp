@@ -56,6 +56,16 @@ public class MemberController {
     public void handleIllegalArgumentException(IllegalArgumentException exception) {
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public void handleUnauthorizedException(UnauthorizedException exception) {
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public void handleConflictException(ConflictException exception) {
+    }
+
     private void addTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
         response.addCookie(httpOnlyCookie("accessToken", accessToken));
         response.addCookie(httpOnlyCookie("refreshToken", refreshToken));

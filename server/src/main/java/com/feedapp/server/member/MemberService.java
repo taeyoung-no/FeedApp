@@ -17,7 +17,7 @@ public class MemberService {
         validateLength(username);
         validateLength(password);
         if (memberRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("username 중복임");
+            throw new ConflictException("username 중복임");
         }
         Member saved = memberRepository.save(new Member(null, username, password));
         return new MemberResponse(saved.getId(), saved.getUsername());
@@ -27,9 +27,9 @@ public class MemberService {
         validateLength(username);
         validateLength(password);
         Member member = memberRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("뭔가 잘못 입력함"));
+                .orElseThrow(() -> new UnauthorizedException("뭔가 잘못 입력함"));
         if (!member.getPassword().equals(password)) {
-            throw new IllegalArgumentException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("뭔가 잘못 입력함");
         }
         final TokenResponse tokens = issueTokens(member.getUsername(), null);
         return new LoginResult(
@@ -42,14 +42,14 @@ public class MemberService {
 
     public TokenResponse refresh(String refreshToken) {
         if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
-            throw new IllegalArgumentException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("뭔가 잘못 입력함");
         }
         final String sid = jwtTokenProvider.getSid(refreshToken);
         final String jti = jwtTokenProvider.getJti(refreshToken);
         final String storedJti = refreshTokenStore.find(sid)
-                .orElseThrow(() -> new IllegalArgumentException("뭔가 잘못 입력함"));
+                .orElseThrow(() -> new UnauthorizedException("뭔가 잘못 입력함"));
         if (!storedJti.equals(jti)) {
-            throw new IllegalArgumentException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("뭔가 잘못 입력함");
         }
         final String username = jwtTokenProvider.getUsername(refreshToken);
         return issueTokens(username, sid);
@@ -57,7 +57,7 @@ public class MemberService {
 
     public void logout(String refreshToken) {
         if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
-            throw new IllegalArgumentException("뭔가 잘못 입력함");
+            throw new UnauthorizedException("뭔가 잘못 입력함");
         }
         refreshTokenStore.delete(jwtTokenProvider.getSid(refreshToken));
     }

@@ -55,16 +55,16 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("서비스가 예외를 던지면 회원가입 실패")
+    @DisplayName("username 중복이면 회원가입 실패")
     void signupWhenServiceThrows() throws Exception {
         final var request = new SignupRequest("username", "password");
         when(memberService.signup(request.username(), request.password()))
-                .thenThrow(new IllegalArgumentException("username 중복임"));
+                .thenThrow(new ConflictException("username 중복임"));
 
         mockMvc.perform(post("/api/members/signup")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -87,16 +87,16 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("서비스가 예외를 던지면 로그인 실패")
+    @DisplayName("인증 실패면 로그인 실패")
     void loginWhenServiceThrows() throws Exception {
         final var request = new LoginRequest("username", "password");
         when(memberService.login(request.username(), request.password()))
-                .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
+                .thenThrow(new UnauthorizedException("뭔가 잘못 입력함"));
 
         mockMvc.perform(post("/api/members/login")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -116,15 +116,15 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("서비스가 예외를 던지면 토큰 재발급 실패")
+    @DisplayName("인증 실패면 토큰 재발급 실패")
     void refreshWhenServiceThrows() throws Exception {
         final String refreshToken = "invalid-token";
         when(memberService.refresh(refreshToken))
-                .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
+                .thenThrow(new UnauthorizedException("뭔가 잘못 입력함"));
 
         mockMvc.perform(post("/api/members/refresh")
                         .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -142,14 +142,14 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("서비스가 예외를 던지면 로그아웃 실패")
+    @DisplayName("인증 실패면 로그아웃 실패")
     void logoutWhenServiceThrows() throws Exception {
         final String refreshToken = "invalid-token";
-        doThrow(new IllegalArgumentException("뭔가 잘못 입력함"))
+        doThrow(new UnauthorizedException("뭔가 잘못 입력함"))
                 .when(memberService).logout(refreshToken);
 
         mockMvc.perform(post("/api/members/logout")
                         .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 }

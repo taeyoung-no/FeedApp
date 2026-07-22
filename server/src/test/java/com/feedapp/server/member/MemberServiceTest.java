@@ -64,7 +64,7 @@ class MemberServiceTest {
         when(memberRepository.existsByUsername(username)).thenReturn(true);
 
         assertThatThrownBy(() -> memberService.signup(username, password))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(ConflictException.class);
 
         verify(memberRepository, never()).save(any(Member.class));
     }
@@ -149,7 +149,7 @@ class MemberServiceTest {
     @DisplayName("유효하지 않은 리프레시 토큰이면 재발급 실패")
     void refreshWithInvalidToken() {
         assertThatThrownBy(() -> memberService.refresh("invalid-token"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
@@ -160,7 +160,7 @@ class MemberServiceTest {
         final String accessToken = jwtTokenProvider.createAccessToken("username");
 
         assertThatThrownBy(() -> memberService.refresh(accessToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
@@ -173,7 +173,7 @@ class MemberServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> memberService.refresh(refreshToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
@@ -186,7 +186,7 @@ class MemberServiceTest {
         when(refreshTokenStore.find(sid)).thenReturn(Optional.of(UUID.randomUUID().toString()));
 
         assertThatThrownBy(() -> memberService.refresh(refreshToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
@@ -198,7 +198,7 @@ class MemberServiceTest {
         when(memberRepository.findByUsername(username)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> memberService.login(username, "password"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
@@ -209,7 +209,7 @@ class MemberServiceTest {
                 .thenReturn(Optional.of(new Member(1L, username, "password")));
 
         assertThatThrownBy(() -> memberService.login(username, "wrong"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
@@ -255,7 +255,7 @@ class MemberServiceTest {
     @DisplayName("유효하지 않은 리프레시 토큰이면 로그아웃 실패")
     void logoutWithInvalidToken() {
         assertThatThrownBy(() -> memberService.logout("invalid-token"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).delete(anyString());
     }
@@ -266,8 +266,9 @@ class MemberServiceTest {
         final String accessToken = jwtTokenProvider.createAccessToken("username");
 
         assertThatThrownBy(() -> memberService.logout(accessToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(refreshTokenStore, never()).delete(anyString());
     }
 }
+
