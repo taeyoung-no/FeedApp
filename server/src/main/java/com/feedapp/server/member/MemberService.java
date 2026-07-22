@@ -41,7 +41,7 @@ public class MemberService {
     }
 
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtTokenProvider.validate(refreshToken) || !"refresh".equals(jwtTokenProvider.getType(refreshToken))) {
+        if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
             throw new IllegalArgumentException("뭔가 잘못 입력함");
         }
         final String sid = jwtTokenProvider.getSid(refreshToken);
@@ -53,6 +53,13 @@ public class MemberService {
         }
         final String username = jwtTokenProvider.getUsername(refreshToken);
         return issueTokens(username, sid);
+    }
+
+    public void logout(String refreshToken) {
+        if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
+            throw new IllegalArgumentException("뭔가 잘못 입력함");
+        }
+        refreshTokenStore.delete(jwtTokenProvider.getSid(refreshToken));
     }
 
     private TokenResponse issueTokens(String username, String sid) {

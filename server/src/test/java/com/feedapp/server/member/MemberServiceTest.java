@@ -239,4 +239,35 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.login("username", "long-password"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰이면 세션 삭제")
+    void logout() {
+        final String refreshToken = jwtTokenProvider.createRefreshToken("username");
+        final String sid = jwtTokenProvider.getSid(refreshToken);
+
+        memberService.logout(refreshToken);
+
+        verify(refreshTokenStore).delete(sid);
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 리프레시 토큰이면 로그아웃 실패")
+    void logoutWithInvalidToken() {
+        assertThatThrownBy(() -> memberService.logout("invalid-token"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("액세스 토큰으로 로그아웃하면 실패")
+    void logoutWithAccessToken() {
+        final String accessToken = jwtTokenProvider.createAccessToken("username");
+
+        assertThatThrownBy(() -> memberService.logout(accessToken))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(refreshTokenStore, never()).delete(anyString());
+    }
 }

@@ -1,5 +1,7 @@
 package com.feedapp.server.member;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -121,6 +123,32 @@ class MemberControllerTest {
                 .thenThrow(new IllegalArgumentException("뭔가 잘못 입력함"));
 
         mockMvc.perform(post("/api/members/refresh")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 로그아웃 성공, 토큰 쿠키 삭제")
+    void logout() throws Exception {
+        final String refreshToken = "refresh-token";
+
+        mockMvc.perform(post("/api/members/logout")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("accessToken", 0))
+                .andExpect(cookie().maxAge("refreshToken", 0));
+
+        verify(memberService).logout(refreshToken);
+    }
+
+    @Test
+    @DisplayName("서비스가 예외를 던지면 로그아웃 실패")
+    void logoutWhenServiceThrows() throws Exception {
+        final String refreshToken = "invalid-token";
+        doThrow(new IllegalArgumentException("뭔가 잘못 입력함"))
+                .when(memberService).logout(refreshToken);
+
+        mockMvc.perform(post("/api/members/logout")
                         .cookie(new Cookie("refreshToken", refreshToken)))
                 .andExpect(status().isBadRequest());
     }

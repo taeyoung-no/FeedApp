@@ -19,4 +19,8 @@ public class RefreshTokenStore {
     public Optional<String> find(String sid) {
         return Optional.ofNullable(stringRedisTemplate.opsForValue().get(sid));
     }
+
+    public void delete(String sid) {
+        stringRedisTemplate.delete(sid);
+    }
 }

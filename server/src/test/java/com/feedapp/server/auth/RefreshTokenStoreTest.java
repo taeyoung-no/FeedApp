@@ -65,4 +65,16 @@ class RefreshTokenStoreTest {
 
         assertThat(refreshTokenStore.find(sid)).isEmpty();
     }
+
+    @Test
+    @DisplayName("sid 삭제")
+    void delete() {
+        final String sid = UUID.randomUUID().toString();
+        final String jti = UUID.randomUUID().toString();
+        refreshTokenStore.save(sid, jti);
+
+        refreshTokenStore.delete(sid);
+
+        assertThat(refreshTokenStore.find(sid)).isEmpty();
+    }
 }

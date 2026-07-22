@@ -41,6 +41,16 @@ public class MemberController {
         addTokenCookies(response, tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
     }
 
+    @PostMapping("/api/members/logout")
+    @ResponseStatus(HttpStatus.OK)
+    public void logout(
+            @CookieValue("refreshToken") String refreshToken,
+            HttpServletResponse response
+    ) {
+        memberService.logout(refreshToken);
+        clearTokenCookies(response);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public void handleIllegalArgumentException(IllegalArgumentException exception) {
@@ -51,10 +61,21 @@ public class MemberController {
         response.addCookie(httpOnlyCookie("refreshToken", refreshToken));
     }
 
+    private void clearTokenCookies(HttpServletResponse response) {
+        response.addCookie(expiredCookie("accessToken"));
+        response.addCookie(expiredCookie("refreshToken"));
+    }
+
     private Cookie httpOnlyCookie(String name, String value) {
         final Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
+        return cookie;
+    }
+
+    private Cookie expiredCookie(String name) {
+        final Cookie cookie = httpOnlyCookie(name, "");
+        cookie.setMaxAge(0);
         return cookie;
     }
 }
