@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios'
 import './App.css'
+import Navbar from './components/Navbar'
 
 function App() {
-  const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    const fetchHello = async () => {
-      try {
-        const res = await axios.get<string>('/api/hello', { responseType: 'text' })
-        setMessage(res.data)
-      } catch {
-        setMessage('뭔가 잘못됨')
-      }
-    }
-    void fetchHello()
-  }, [])
-
-  return <h1>{message}</h1>
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+    </div>
+  )
 }
 
 export default App
