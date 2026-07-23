@@ -2,11 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
-import { signup } from '../api/member'
+import { login, signup } from '../api/member'
 import { signupSchema, type SignupFormData } from '../schemas/signup'
+import { useAuthStore } from '../store/authStore'
 
 function SignupPage() {
   const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
 
   const {
     register,
@@ -22,6 +24,12 @@ function SignupPage() {
         username: values.username,
         password: values.password,
       })
+      // todo: 회원가입 성공, 로그인 실패 시 '회원가입 실패' alert 띄움. 이거 수정해야 함.
+      const user = await login({
+        username: values.username,
+        password: values.password,
+      })
+      setUser(user)
       navigate('/')
     } catch (error) {
       if (axios.isAxiosError(error)) {
