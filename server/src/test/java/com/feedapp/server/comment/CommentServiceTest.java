@@ -1,13 +1,18 @@
 package com.feedapp.server.comment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import com.feedapp.server.common.ForbiddenException;
+import com.feedapp.server.common.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,5 +85,45 @@ class CommentServiceTest {
         assertThat(result.getCreatedAt()).isEqualTo(createdAt);
 
         verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 댓글 삭제 성공")
+    void deleteComment() {
+        final Long id = 1L;
+        final String author = "author";
+        final var comment = new Comment(id, 1L, "content", author, LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
+
+        commentService.delete(id, author);
+
+        verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    @DisplayName("댓글이 없으면 삭제 실패")
+    void deleteCommentWhenNotFound() {
+        final Long id = 1L;
+        when(commentRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.delete(id, "author"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("댓글 없음");
+
+        verify(commentRepository, never()).delete(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 삭제 실패")
+    void deleteCommentWhenNotAuthor() {
+        final Long id = 1L;
+        final var comment = new Comment(id, 1L, "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.delete(id, "other"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("권한 없음");
+
+        verify(commentRepository, never()).delete(any(Comment.class));
     }
 }

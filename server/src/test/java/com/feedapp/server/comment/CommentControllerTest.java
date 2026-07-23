@@ -1,7 +1,10 @@
 package com.feedapp.server.comment;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -13,7 +16,9 @@ import java.util.List;
 import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.SecurityConfig;
+import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.GlobalExceptionHandler;
+import com.feedapp.server.common.NotFoundException;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -123,5 +128,59 @@ class CommentControllerTest {
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 댓글 삭제 성공")
+    void deleteComment() throws Exception {
+        final Long postId = 1L;
+        final Long id = 1L;
+        final String username = "author";
+        final String token = jwtTokenProvider.createAccessToken(username);
+
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isNoContent());
+
+        verify(commentService).delete(id, username);
+    }
+
+    @Test
+    @DisplayName("토큰이 없으면 댓글 삭제 실패")
+    void deleteCommentWithoutToken() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", 1L, 1L))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("댓글이 없으면 삭제 실패")
+    void deleteCommentWhenNotFound() throws Exception {
+        final Long postId = 1L;
+        final Long id = 1L;
+        final String username = "author";
+        final String token = jwtTokenProvider.createAccessToken(username);
+        doThrow(new NotFoundException("댓글 없음"))
+                .when(commentService).delete(id, username);
+
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("댓글 없음"));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 삭제 실패")
+    void deleteCommentWhenNotAuthor() throws Exception {
+        final Long postId = 1L;
+        final Long id = 1L;
+        final String username = "other";
+        final String token = jwtTokenProvider.createAccessToken(username);
+        doThrow(new ForbiddenException("권한 없음"))
+                .when(commentService).delete(id, username);
+
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("권한 없음"));
     }
 }

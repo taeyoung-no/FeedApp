@@ -71,4 +71,16 @@ class CommentRepositoryTest {
         assertThat(saved.getAuthor()).isEqualTo(author);
         assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
     }
+
+    @Test
+    @DisplayName("저장된 댓글 삭제")
+    void delete() {
+        final Comment saved = commentRepository.save(
+                new Comment(null, 1L, "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0))
+        );
+
+        commentRepository.delete(saved);
+
+        assertThat(commentRepository.findById(saved.getId())).isEmpty();
+    }
 }
