@@ -54,4 +54,21 @@ class CommentRepositoryTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("유효한 요청이면 댓글 정상 저장")
+    void save() {
+        final Long postId = 1L;
+        final String content = "content";
+        final String author = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+
+        final Comment saved = commentRepository.save(new Comment(null, postId, content, author, createdAt));
+
+        assertThat(saved.getId()).isNotNull();
+        assertThat(saved.getPostId()).isEqualTo(postId);
+        assertThat(saved.getContent()).isEqualTo(content);
+        assertThat(saved.getAuthor()).isEqualTo(author);
+        assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
+    }
 }

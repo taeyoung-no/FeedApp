@@ -1,7 +1,9 @@
 package com.feedapp.server.comment;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -12,6 +14,7 @@ import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.SecurityConfig;
 import com.feedapp.server.common.GlobalExceptionHandler;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +23,20 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import tools.jackson.databind.ObjectMapper;
+
 @WebMvcTest(CommentController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class, JwtTokenProvider.class, GlobalExceptionHandler.class})
 class CommentControllerTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
     CommentService commentService;
@@ -65,5 +76,52 @@ class CommentControllerTest {
         mockMvc.perform(get("/api/posts/{postId}/comments", postId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 토큰 username으로 댓글 작성 성공")
+    void create() throws Exception {
+        final Long postId = 1L;
+        final String username = "author";
+        final var request = new CreateCommentRequest("content");
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(commentService.create(postId, request.content(), username))
+                .thenReturn(new CommentResponse(1L, postId, request.content(), username, createdAt));
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", postId)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.postId").value(postId))
+                .andExpect(jsonPath("$.content").value(request.content()))
+                .andExpect(jsonPath("$.author").value(username))
+                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
+    }
+
+    @Test
+    @DisplayName("토큰이 없으면 댓글 작성 실패")
+    void createWithoutToken() throws Exception {
+        final var request = new CreateCommentRequest("content");
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", 1L)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰이면 댓글 작성 실패")
+    void createWithRefreshToken() throws Exception {
+        final var request = new CreateCommentRequest("content");
+        final String token = jwtTokenProvider.createRefreshToken("author");
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", 1L)
+                        .cookie(new Cookie("refreshToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -1,6 +1,8 @@
 package com.feedapp.server.comment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -57,5 +59,26 @@ class CommentServiceTest {
         final List<CommentResponse> result = commentService.findByPostId(postId);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 댓글 저장하고 정보 반환")
+    void create() {
+        final Long postId = 1L;
+        final String content = "content";
+        final String author = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var saved = new Comment(1L, postId, content, author, createdAt);
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+
+        final CommentResponse result = commentService.create(postId, content, author);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getPostId()).isEqualTo(postId);
+        assertThat(result.getContent()).isEqualTo(content);
+        assertThat(result.getAuthor()).isEqualTo(author);
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+
+        verify(commentRepository).save(any(Comment.class));
     }
 }

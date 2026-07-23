@@ -1,5 +1,6 @@
 package com.feedapp.server.comment;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,13 @@ public class CommentService {
                 .toList();
     }
 
+    public CommentResponse create(Long postId, String content, String author) {
+        Comment saved = commentRepository.save(
+                new Comment(null, postId, content, author, LocalDateTime.now())
+        );
+        return toResponse(saved);
+    }
+
     private CommentResponse toResponse(Comment comment) {
         return new CommentResponse(
                 comment.getId(),
@@ -27,3 +35,4 @@ public class CommentService {
         );
     }
 }
+
