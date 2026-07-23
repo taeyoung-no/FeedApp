@@ -133,12 +133,11 @@ class CommentControllerTest {
     @Test
     @DisplayName("유효한 요청이면 댓글 삭제 성공")
     void deleteComment() throws Exception {
-        final Long postId = 1L;
         final Long id = 1L;
         final String username = "author";
         final String token = jwtTokenProvider.createAccessToken(username);
 
-        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+        mockMvc.perform(delete("/api/comments/{id}", id)
                         .cookie(new Cookie("accessToken", token)))
                 .andExpect(status().isNoContent());
 
@@ -148,21 +147,20 @@ class CommentControllerTest {
     @Test
     @DisplayName("토큰이 없으면 댓글 삭제 실패")
     void deleteCommentWithoutToken() throws Exception {
-        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", 1L, 1L))
+        mockMvc.perform(delete("/api/comments/{id}", 1L))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("댓글이 없으면 삭제 실패")
     void deleteCommentWhenNotFound() throws Exception {
-        final Long postId = 1L;
         final Long id = 1L;
         final String username = "author";
         final String token = jwtTokenProvider.createAccessToken(username);
         doThrow(new NotFoundException("댓글 없음"))
                 .when(commentService).delete(id, username);
 
-        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+        mockMvc.perform(delete("/api/comments/{id}", id)
                         .cookie(new Cookie("accessToken", token)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("댓글 없음"));
@@ -171,14 +169,13 @@ class CommentControllerTest {
     @Test
     @DisplayName("작성자가 아니면 삭제 실패")
     void deleteCommentWhenNotAuthor() throws Exception {
-        final Long postId = 1L;
         final Long id = 1L;
         final String username = "other";
         final String token = jwtTokenProvider.createAccessToken(username);
         doThrow(new ForbiddenException("권한 없음"))
                 .when(commentService).delete(id, username);
 
-        mockMvc.perform(delete("/api/posts/{postId}/comments/{id}", postId, id)
+        mockMvc.perform(delete("/api/comments/{id}", id)
                         .cookie(new Cookie("accessToken", token)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("권한 없음"));

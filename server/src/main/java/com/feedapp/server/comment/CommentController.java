@@ -35,13 +35,9 @@ public class CommentController {
         return commentService.create(postId, request.content(), authentication.getName());
     }
 
-    @DeleteMapping("/api/posts/{postId}/comments/{id}")
+    @DeleteMapping("/api/comments/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-            @PathVariable Long postId,
-            @PathVariable Long id,
-            Authentication authentication
-    ) {
+    public void delete(@PathVariable Long id, Authentication authentication) {
         commentService.delete(id, authentication.getName());
     }
 }
