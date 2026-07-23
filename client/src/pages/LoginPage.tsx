@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../api/member'
@@ -10,7 +9,6 @@ import { useAuthStore } from '../store/authStore'
 function LoginPage() {
   const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
-  const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register,
@@ -21,8 +19,6 @@ function LoginPage() {
   })
 
   const onSubmit = async (values: LoginFormData) => {
-    setServerError(null)
-
     try {
       const user = await login({
         username: values.username,
@@ -32,10 +28,10 @@ function LoginPage() {
       navigate('/')
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setServerError(error.response?.data?.message ?? '로그인 실패')
+        alert(error.response?.data?.message ?? '로그인 실패')
         return
       }
-      setServerError('로그인 실패')
+      alert('로그인 실패')
     }
   }
 
@@ -71,8 +67,6 @@ function LoginPage() {
             </div>
           </div>
         </div>
-
-        {serverError && <p className="text-red-500 mb-4">{serverError}</p>}
 
         <div className="flex justify-end gap-2">
           <Link to="/" className="cursor-pointer px-3 py-2 hover:underline">

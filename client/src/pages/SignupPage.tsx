@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { signup } from '../api/member'
@@ -8,7 +7,6 @@ import { signupSchema, type SignupFormData } from '../schemas/signup'
 
 function SignupPage() {
   const navigate = useNavigate()
-  const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register,
@@ -19,8 +17,6 @@ function SignupPage() {
   })
 
   const onSubmit = async (values: SignupFormData) => {
-    setServerError(null)
-
     try {
       await signup({
         username: values.username,
@@ -29,10 +25,10 @@ function SignupPage() {
       navigate('/')
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setServerError(error.response?.data?.message ?? '회원가입 실패')
+        alert(error.response?.data?.message ?? '회원가입 실패')
         return
       }
-      setServerError('회원가입 실패')
+      alert('회원가입 실패')
     }
   }
 
@@ -77,14 +73,10 @@ function SignupPage() {
               {...register('passwordConfirm')}
             />
             <div className="min-h-6">
-              {errors.passwordConfirm && (
-                <p className="text-red-500">{errors.passwordConfirm.message}</p>
-              )}
+              {errors.passwordConfirm && <p className="text-red-500">{errors.passwordConfirm.message}</p>}
             </div>
           </div>
         </div>
-
-        {serverError && <p className="text-red-500 mb-4">{serverError}</p>}
 
         <div className="flex justify-end gap-2">
           <Link to="/" className="cursor-pointer px-3 py-2 hover:underline">
