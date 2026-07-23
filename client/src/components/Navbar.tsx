@@ -1,9 +1,16 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
 function Navbar() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const isLoading = useAuthStore((state) => state.isLoading)
+  const logout = useAuthStore((state) => state.logout)
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 mb-5">
@@ -19,6 +26,9 @@ function Navbar() {
           (user ? (
             <div className="flex items-center gap-3">
               <span>{user.username}님</span>
+              <button type="button" onClick={handleLogout} className="cursor-pointer hover:underline">
+                로그아웃
+              </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">

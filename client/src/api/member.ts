@@ -35,3 +35,6 @@ export async function getMe(): Promise<LoginResponse> {
   return response.data
 }
 
+export async function logout(): Promise<void> {
+  await apiClient.post('/members/logout')
+}
