@@ -40,6 +40,12 @@ public class MemberService {
         );
     }
 
+    public LoginResponse getMe(String username) {
+        Member member = memberRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("유효하지 않은 인증 정보임"));
+        return new LoginResponse(member.getId(), member.getUsername());
+    }
+
     public TokenResponse refresh(String refreshToken) {
         if (!jwtTokenProvider.validate(refreshToken) || !jwtTokenProvider.getType(refreshToken).equals("refresh")) {
             throw new UnauthorizedException("유효하지 않은 인증 정보임");

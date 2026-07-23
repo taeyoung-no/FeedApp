@@ -5,9 +5,11 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../api/member'
 import { loginSchema, type LoginFormData } from '../schemas/login'
+import { useAuthStore } from '../store/authStore'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -22,10 +24,11 @@ function LoginPage() {
     setServerError(null)
 
     try {
-      await login({
+      const user = await login({
         username: values.username,
         password: values.password,
       })
+      setUser(user)
       navigate('/')
     } catch (error) {
       if (axios.isAxiosError(error)) {

@@ -4,7 +4,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,6 +30,17 @@ public class MemberController {
         final LoginResult loginResult = memberService.login(request.username(), request.password());
         addTokenCookies(response, loginResult.getAccessToken(), loginResult.getRefreshToken());
         return new LoginResponse(loginResult.getId(), loginResult.getUsername());
+    }
+
+    @GetMapping("/api/members/me")
+    @ResponseStatus(HttpStatus.OK)
+    public LoginResponse me(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getName().equals("anonymousUser")) {
+            throw new UnauthorizedException("유효하지 않은 인증 정보임");
+        }
+        return memberService.getMe(authentication.getName());
     }
 
     @PostMapping("/api/members/refresh")

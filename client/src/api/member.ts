@@ -30,3 +30,8 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   return response.data
 }
 
+export async function getMe(): Promise<LoginResponse> {
+  const response = await apiClient.get<LoginResponse>('/members/me')
+  return response.data
+}
+

@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
 
 function Navbar() {
+  const user = useAuthStore((state) => state.user)
+  const isLoading = useAuthStore((state) => state.isLoading)
+
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 mb-5">
       <nav className="max-w-2xl mx-auto py-4 flex items-center justify-between">
@@ -11,14 +15,21 @@ function Navbar() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link to="/signup" className="cursor-pointer hover:underline">
-            회원가입
-          </Link>
-          <Link to="/login" className="cursor-pointer hover:underline">
-            로그인
-          </Link>
-        </div>
+        {!isLoading &&
+          (user ? (
+            <div className="flex items-center gap-3">
+              <span>{user.username}님</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link to="/signup" className="cursor-pointer hover:underline">
+                회원가입
+              </Link>
+              <Link to="/login" className="cursor-pointer hover:underline">
+                로그인
+              </Link>
+            </div>
+          ))}
       </nav>
     </header>
   )
