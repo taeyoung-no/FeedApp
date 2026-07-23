@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
+import CreatePostPage from './pages/CreatePostPage'
+import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import { useAuthStore } from './store/authStore'
@@ -17,7 +19,8 @@ function App() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <Routes>
-        <Route path="/" element={null} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/posts/new" element={<CreatePostPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
