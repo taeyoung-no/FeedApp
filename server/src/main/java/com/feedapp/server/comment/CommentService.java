@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.post.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
 
     public List<CommentResponse> findByPostId(Long postId) {
         return commentRepository.findByPostIdOrderByCreatedAtDesc(postId).stream()
@@ -21,6 +23,9 @@ public class CommentService {
     }
 
     public CommentResponse create(Long postId, String content, String author) {
+        if (!postRepository.existsById(postId)) {
+            throw new NotFoundException("게시글 없음");
+        }
         Comment saved = commentRepository.save(
                 new Comment(null, postId, content, author, LocalDateTime.now())
         );

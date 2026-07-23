@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.post.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,9 @@ class CommentServiceTest {
 
     @Mock
     CommentRepository commentRepository;
+
+    @Mock
+    PostRepository postRepository;
 
     @InjectMocks
     CommentService commentService;
@@ -74,6 +78,7 @@ class CommentServiceTest {
         final String author = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final var saved = new Comment(1L, postId, content, author, createdAt);
+        when(postRepository.existsById(postId)).thenReturn(true);
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
 
         final CommentResponse result = commentService.create(postId, content, author);
@@ -85,6 +90,19 @@ class CommentServiceTest {
         assertThat(result.getCreatedAt()).isEqualTo(createdAt);
 
         verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("게시글이 없으면 댓글 작성 실패")
+    void createWhenPostNotFound() {
+        final Long postId = 1L;
+        when(postRepository.existsById(postId)).thenReturn(false);
+
+        assertThatThrownBy(() -> commentService.create(postId, "content", "author"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("게시글 없음");
+
+        verify(commentRepository, never()).save(any(Comment.class));
     }
 
     @Test

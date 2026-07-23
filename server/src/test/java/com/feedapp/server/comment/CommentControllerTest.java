@@ -118,6 +118,24 @@ class CommentControllerTest {
     }
 
     @Test
+    @DisplayName("게시글이 없으면 댓글 작성 실패")
+    void createWhenPostNotFound() throws Exception {
+        final Long postId = 1L;
+        final String username = "author";
+        final var request = new CreateCommentRequest("content");
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(commentService.create(postId, request.content(), username))
+                .thenThrow(new NotFoundException("게시글 없음"));
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", postId)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("게시글 없음"));
+    }
+
+    @Test
     @DisplayName("리프레시 토큰이면 댓글 작성 실패")
     void createWithRefreshToken() throws Exception {
         final var request = new CreateCommentRequest("content");
