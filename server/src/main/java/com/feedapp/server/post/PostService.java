@@ -40,6 +40,18 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    public PostResponse update(Long id, String title, String content, String username) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("게시글 없음"));
+        if (!post.getAuthor().equals(username)) {
+            throw new ForbiddenException("권한 없음");
+        }
+        Post updated = postRepository.save(
+                new Post(id, title, content, post.getAuthor(), post.getCreatedAt())
+        );
+        return toResponse(updated);
+    }
+
     private PostResponse toResponse(Post post) {
         return new PostResponse(
                 post.getId(),

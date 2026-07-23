@@ -97,4 +97,23 @@ class PostRepositoryTest {
 
         assertThat(postRepository.findById(saved.getId())).isEmpty();
     }
+
+    @Test
+    @DisplayName("저장된 게시글 수정")
+    void update() {
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final Post saved = postRepository.save(
+                new Post(null, "title", "content", "author", createdAt)
+        );
+
+        final Post updated = postRepository.save(
+                new Post(saved.getId(), "newTitle", "newContent", "author", createdAt)
+        );
+
+        assertThat(updated.getId()).isEqualTo(saved.getId());
+        assertThat(updated.getTitle()).isEqualTo("newTitle");
+        assertThat(updated.getContent()).isEqualTo("newContent");
+        assertThat(updated.getAuthor()).isEqualTo("author");
+        assertThat(updated.getCreatedAt()).isEqualTo(createdAt);
+    }
 }

@@ -153,4 +153,53 @@ class PostServiceTest {
 
         verify(postRepository, never()).delete(any(Post.class));
     }
+
+    @Test
+    @DisplayName("유효한 요청이면 게시글 수정하고 정보 반환")
+    void updatePost() {
+        final Long id = 1L;
+        final String author = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var post = new Post(id, "title", "content", author, createdAt);
+        final var updated = new Post(id, "newTitle", "newContent", author, createdAt);
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+        when(postRepository.save(any(Post.class))).thenReturn(updated);
+
+        final PostResponse result = postService.update(id, "newTitle", "newContent", author);
+
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getTitle()).isEqualTo("newTitle");
+        assertThat(result.getContent()).isEqualTo("newContent");
+        assertThat(result.getAuthor()).isEqualTo(author);
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+
+        verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("게시글이 없으면 수정 실패")
+    void updatePostWhenNotFound() {
+        final Long id = 1L;
+        when(postRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "author"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("게시글 없음");
+
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 수정 실패")
+    void updatePostWhenNotAuthor() {
+        final Long id = 1L;
+        final var post = new Post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "other"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("권한 없음");
+
+        verify(postRepository, never()).save(any(Post.class));
+    }
 }
