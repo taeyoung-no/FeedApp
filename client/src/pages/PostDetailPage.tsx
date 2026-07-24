@@ -47,7 +47,7 @@ function PostDetailPage() {
         <article>
           <h2 className="text-3xl mb-2">{post.title}</h2>
           <p className="text-sm text-gray-500 mb-6">{`${post.author} · ${formatDate(post.createdAt)}`}</p>
-          <div className="whitespace-pre-wrap text-2xl">{post.content}</div>
+          <div className="whitespace-pre-wrap text-xl">{post.content}</div>
         </article>
       )}
     </main>
