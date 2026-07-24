@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import CreatePostPage from './pages/CreatePostPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import PostDetailPage from './pages/PostDetailPage'
 import SignupPage from './pages/SignupPage'
 import { useAuthStore } from './store/authStore'
 
@@ -21,6 +22,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/posts/new" element={<CreatePostPage />} />
+        <Route path="/posts/:id" element={<PostDetailPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>

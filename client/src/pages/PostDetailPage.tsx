@@ -1,25 +1,29 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { getPosts, type PostResponse } from '../api/post'
+import { useParams } from 'react-router-dom'
+import { getPost, type PostResponse } from '../api/post'
 
-function HomePage() {
-  const [posts, setPosts] = useState<PostResponse[]>([])
+function PostDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const [post, setPost] = useState<PostResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!id) return
+
     let cancelled = false
 
     const load = async () => {
       try {
-        const data = await getPosts()
+        const data = await getPost(id)
         if (!cancelled) {
-          setPosts(data)
+          setPost(data)
           setError(null)
         }
       } catch {
         if (!cancelled) {
           setError('글을 불러오지 못했습니다')
+          setPost(null)
         }
       } finally {
         if (!cancelled) {
@@ -32,24 +36,20 @@ function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [id])
 
   return (
-    <main>
+    <main className="max-w-2xl mx-auto w-full">
       {isLoading && <p className="text-center text-2xl">글 불러오는 중...</p>}
       {error && <p className="text-center text-2xl">{error}</p>}
-      {!isLoading && !error && posts.length === 0 && <p className="text-center text-2xl">글이 없습니다</p>}
 
-      <div className="max-w-2xl mx-auto space-y-5 mb-5">
-        {posts.map((post) => (
-          <div key={post.id} className="flex items-center">
-            <Link to={`/posts/${post.id}`} className="flex-1 block cursor-pointer group">
-              <h4 className="text-2xl text-blue-800 group-hover:text-black group-hover:underline">{post.title}</h4>
-              <p className="text-sm text-gray-500 mt-1">{`${post.author} · ${formatDate(post.createdAt)}`}</p>
-            </Link>
-          </div>
-        ))}
-      </div>
+      {!isLoading && !error && post && (
+        <article>
+          <h2 className="text-3xl mb-2">{post.title}</h2>
+          <p className="text-sm text-gray-500 mb-6">{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+          <div className="whitespace-pre-wrap text-2xl">{post.content}</div>
+        </article>
+      )}
     </main>
   )
 }
@@ -66,4 +66,4 @@ function formatDate(iso: string) {
   })
 }
 
-export default HomePage
+export default PostDetailPage
