@@ -1,17 +1,8 @@
 import { apiClient } from './client'
+import type { components } from './generated/schema'
 
-export type PostResponse = {
-  id: number
-  title: string
-  content: string
-  author: string
-  createdAt: string
-}
-
-export type CreatePostRequest = {
-  title: string
-  content: string
-}
+export type PostResponse = components['schemas']['PostResponse']
+export type CreatePostRequest = components['schemas']['CreatePostRequest']
 
 export async function getPosts(): Promise<PostResponse[]> {
   const response = await apiClient.get<PostResponse[]>('/posts')

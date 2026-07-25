@@ -54,7 +54,8 @@ function PostDetailPage() {
   )
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string | undefined) {
+  if (iso == null) return ''
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleString('ko-KR', {

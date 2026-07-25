@@ -1,28 +1,14 @@
 import { apiClient } from './client'
+import type { components } from './generated/schema'
 
-export type SignupRequest = {
-  username: string
-  password: string
-}
-
-export type MemberResponse = {
-  id: number
-  username: string
-}
+export type SignupRequest = components['schemas']['SignupRequest']
+export type MemberResponse = components['schemas']['MemberResponse']
+export type LoginRequest = components['schemas']['LoginRequest']
+export type LoginResponse = components['schemas']['LoginResponse']
 
 export async function signup(data: SignupRequest): Promise<MemberResponse> {
   const response = await apiClient.post<MemberResponse>('/members/signup', data)
   return response.data
-}
-
-export type LoginRequest = {
-  username: string
-  password: string
-}
-
-export type LoginResponse = {
-  id: number
-  username: string
 }
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
