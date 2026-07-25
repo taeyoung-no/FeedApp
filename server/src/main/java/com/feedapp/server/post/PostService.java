@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PostService {
 
+    private static final int CONTENT_MAX_LENGTH = 500;
+
     private final PostRepository postRepository;
 
     public List<PostResponse> findAll() {
@@ -27,6 +29,7 @@ public class PostService {
     }
 
     public PostResponse create(String title, String content, String author) {
+        validateContent(content);
         Post saved = postRepository.save(new Post(null, title, content, author, LocalDateTime.now()));
         return toResponse(saved);
     }
@@ -41,6 +44,7 @@ public class PostService {
     }
 
     public PostResponse update(Long id, String title, String content, String username) {
+        validateContent(content);
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("게시글 없음"));
         if (!post.getAuthor().equals(username)) {
@@ -50,6 +54,15 @@ public class PostService {
                 new Post(id, title, content, post.getAuthor(), post.getCreatedAt())
         );
         return toResponse(updated);
+    }
+
+    private void validateContent(String content) {
+        if (content == null || content.isEmpty()) {
+            throw new IllegalArgumentException("내용 입력하세요");
+        }
+        if (content.length() > CONTENT_MAX_LENGTH) {
+            throw new IllegalArgumentException("너무 길어요");
+        }
     }
 
     private PostResponse toResponse(Post post) {
