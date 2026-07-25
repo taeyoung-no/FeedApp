@@ -2,6 +2,8 @@ package com.feedapp.server.post;
 
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -9,9 +11,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostResponse {
 
+    @NotNull
     private final Long id;
+    @NotBlank
     private final String title;
+    @NotBlank
     private final String content;
+    @NotBlank
     private final String author;
+    @NotNull
     private final LocalDateTime createdAt;
 }

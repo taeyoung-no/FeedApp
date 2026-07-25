@@ -1,4 +1,8 @@
 package com.feedapp.server.comment;
 
-public record CreateCommentRequest(String content) {
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateCommentRequest(
+        @NotBlank String content
+) {
 }

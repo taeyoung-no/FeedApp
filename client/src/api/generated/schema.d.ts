@@ -169,55 +169,55 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         ErrorResponse: {
-            message?: string;
+            message: string;
         };
         UpdatePostRequest: {
-            title?: string;
-            content?: string;
+            title: string;
+            content: string;
         };
         PostResponse: {
             /** Format: int64 */
-            id?: number;
-            title?: string;
-            content?: string;
-            author?: string;
+            id: number;
+            title: string;
+            content: string;
+            author: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         CreatePostRequest: {
-            title?: string;
-            content?: string;
+            title: string;
+            content: string;
         };
         CreateCommentRequest: {
-            content?: string;
+            content: string;
         };
         CommentResponse: {
             /** Format: int64 */
-            id?: number;
+            id: number;
             /** Format: int64 */
-            postId?: number;
-            content?: string;
-            author?: string;
+            postId: number;
+            content: string;
+            author: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         SignupRequest: {
-            username?: string;
-            password?: string;
+            username: string;
+            password: string;
         };
         MemberResponse: {
             /** Format: int64 */
-            id?: number;
-            username?: string;
+            id: number;
+            username: string;
         };
         LoginRequest: {
-            username?: string;
-            password?: string;
+            username: string;
+            password: string;
         };
         LoginResponse: {
             /** Format: int64 */
-            id?: number;
-            username?: string;
+            id: number;
+            username: string;
         };
     };
     responses: never;

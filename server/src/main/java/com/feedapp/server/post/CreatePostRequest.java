@@ -1,4 +1,9 @@
 package com.feedapp.server.post;
 
-public record CreatePostRequest(String title, String content) {
+import jakarta.validation.constraints.NotBlank;
+
+public record CreatePostRequest(
+        @NotBlank String title,
+        @NotBlank String content
+) {
 }

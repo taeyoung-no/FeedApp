@@ -1,4 +1,9 @@
 package com.feedapp.server.member;
 
-public record SignupRequest(String username, String password) {
+import jakarta.validation.constraints.NotBlank;
+
+public record SignupRequest(
+        @NotBlank String username,
+        @NotBlank String password
+) {
 }
