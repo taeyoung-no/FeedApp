@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { createPost } from '../api/post'
 import { createPostSchema, type CreatePostFormData } from '../schemas/post'
@@ -15,10 +15,15 @@ function CreatePostPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreatePostFormData>({
     resolver: zodResolver(createPostSchema),
   })
+
+  const content = useWatch({ control, name: 'content', defaultValue: '' })
+  const contentLength = content.length
+  const contentMaxLength = 500
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -59,7 +64,12 @@ function CreatePostPage() {
           </div>
 
           <div>
-            <h4>내용</h4>
+            <div className="flex items-baseline justify-between gap-2">
+              <h4>내용</h4>
+              <span className="text-gray-500">
+                {contentLength} / {contentMaxLength}
+              </span>
+            </div>
             <textarea rows={10} className="w-full px-4 py-3 border border-gray-300 resize-y" {...register('content')} />
             <div className="min-h-6">{errors.content && <p className="text-red-500">{errors.content.message}</p>}</div>
           </div>
