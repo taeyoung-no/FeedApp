@@ -48,7 +48,7 @@ function PostDetailPage() {
       {!isLoading && !error && post && (
         <article>
           <h2 className="text-3xl mb-2">{post.title}</h2>
-          <div className="flex items-center gap-3 text-sm text-gray-500 mb-6">
+          <div className="flex items-center gap-3 text-gray-500 mb-6">
             <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
             {user && user.username === post.author && (
               <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
