@@ -3,6 +3,7 @@ import type { components } from './generated/schema'
 
 export type PostResponse = components['schemas']['PostResponse']
 export type CreatePostRequest = components['schemas']['CreatePostRequest']
+export type UpdatePostRequest = components['schemas']['UpdatePostRequest']
 
 export async function getPosts(): Promise<PostResponse[]> {
   const response = await apiClient.get<PostResponse[]>('/posts')
@@ -16,5 +17,10 @@ export async function getPost(id: string): Promise<PostResponse> {
 
 export async function createPost(data: CreatePostRequest): Promise<PostResponse> {
   const response = await apiClient.post<PostResponse>('/posts', data)
+  return response.data
+}
+
+export async function updatePost(id: string, data: UpdatePostRequest): Promise<PostResponse> {
+  const response = await apiClient.put<PostResponse>(`/posts/${id}`, data)
   return response.data
 }

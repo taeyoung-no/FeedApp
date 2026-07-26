@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getPost, type PostResponse } from '../api/post'
+import { useAuthStore } from '../store/authStore'
 
 function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const user = useAuthStore((state) => state.user)
   const [post, setPost] = useState<PostResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +48,14 @@ function PostDetailPage() {
       {!isLoading && !error && post && (
         <article>
           <h2 className="text-3xl mb-2">{post.title}</h2>
-          <p className="text-sm text-gray-500 mb-6">{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+          <div className="flex items-center gap-3 text-sm text-gray-500 mb-6">
+            <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+            {user && user.username === post.author && (
+              <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
+                수정
+              </Link>
+            )}
+          </div>
           <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
         </article>
       )}
