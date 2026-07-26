@@ -66,12 +66,17 @@ function CreatePostPage() {
           <div>
             <div className="flex items-baseline justify-between gap-2">
               <h4>내용</h4>
-              <span className="text-gray-500">
+              <button type="button" className="cursor-pointer hover:underline">
+                이미지
+              </button>
+            </div>
+            <textarea rows={10} className="w-full px-4 py-3 border border-gray-300 resize-y" {...register('content')} />
+            <div className="flex items-start justify-between gap-2 min-h-6">
+              <div>{errors.content && <p className="text-red-500">{errors.content.message}</p>}</div>
+              <span className="text-gray-500 shrink-0">
                 {contentLength} / {contentMaxLength}
               </span>
             </div>
-            <textarea rows={10} className="w-full px-4 py-3 border border-gray-300 resize-y" {...register('content')} />
-            <div className="min-h-6">{errors.content && <p className="text-red-500">{errors.content.message}</p>}</div>
           </div>
         </div>
 
