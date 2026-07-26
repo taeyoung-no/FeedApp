@@ -1,6 +1,7 @@
 import axios from 'axios'
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { createComment, getComments, type CommentResponse } from '../api/comment'
 import { deletePost, getPost, type PostResponse } from '../api/post'
 import { useAuthStore } from '../store/authStore'
 
@@ -12,6 +13,11 @@ function PostDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const [comments, setComments] = useState<CommentResponse[]>([])
+  const [commentsError, setCommentsError] = useState<string | null>(null)
+  const [commentContent, setCommentContent] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -43,6 +49,32 @@ function PostDetailPage() {
     }
   }, [id])
 
+  useEffect(() => {
+    if (!id) return
+
+    let cancelled = false
+
+    const loadComments = async () => {
+      try {
+        const data = await getComments(id)
+        if (!cancelled) {
+          setComments(data)
+          setCommentsError(null)
+        }
+      } catch {
+        if (!cancelled) {
+          setCommentsError('댓글을 불러오지 못했습니다')
+          setComments([])
+        }
+      }
+    }
+
+    loadComments()
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
   const handleDelete = async () => {
     if (!id || isDeleting) return
 
@@ -60,34 +92,100 @@ function PostDetailPage() {
     }
   }
 
+  const handleCreateComment = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!id || isSubmittingComment) return
+
+    const content = commentContent.trim()
+    if (!content) return
+
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setIsSubmittingComment(true)
+    try {
+      const created = await createComment(id, { content })
+      setComments((prev) => [created, ...prev])
+      setCommentContent('')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message ?? '댓글 작성 실패')
+      } else {
+        alert('댓글 작성 실패')
+      }
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+
   return (
     <main className="max-w-2xl mx-auto w-full">
       {isLoading && <p className="text-center text-2xl">글 불러오는 중...</p>}
       {error && <p className="text-center text-2xl">{error}</p>}
 
       {!isLoading && !error && post && (
-        <article>
-          <h2 className="text-3xl mb-2">{post.title}</h2>
-          <div className="flex items-center gap-3 text-gray-500 mb-6">
-            <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
-            {user && user.username === post.author && (
-              <>
-                <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
-                  수정
-                </Link>
+        <>
+          <article>
+            <h2 className="text-3xl mb-2">{post.title}</h2>
+            <div className="flex items-center gap-3 text-gray-500 mb-6">
+              <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+              {user && user.username === post.author && (
+                <>
+                  <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
+                    수정
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="text-black cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? '삭제 중…' : '삭제'}
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
+          </article>
+
+          <section className="mt-10">
+            <h3 className="text-xl mb-4">댓글</h3>
+
+            {commentsError && <p className="text-gray-500 mb-4">{commentsError}</p>}
+
+            <ul className="space-y-4 mb-6">
+              {comments.length === 0 && !commentsError && <li className="text-gray-500">댓글이 없습니다</li>}
+              {comments.map((comment) => (
+                <li key={comment.id}>
+                  <p className="text-sm text-gray-500 mb-1">{`${comment.author} · ${formatDate(comment.createdAt)}`}</p>
+                  <p className="whitespace-pre-wrap break-words">{comment.content}</p>
+                </li>
+              ))}
+            </ul>
+
+            <form onSubmit={handleCreateComment}>
+              <input
+                type="text"
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                placeholder="댓글을 입력하세요"
+                className="w-full px-4 py-3 border border-gray-300 mb-2"
+                disabled={isSubmittingComment}
+              />
+              <div className="flex justify-end">
                 <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="text-black cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
+                  disabled={isSubmittingComment}
+                  className="cursor-pointer px-3 py-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isDeleting ? '삭제 중…' : '삭제'}
+                  {isSubmittingComment ? '작성 중…' : '작성'}
                 </button>
-              </>
-            )}
-          </div>
-          <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
-        </article>
+              </div>
+            </form>
+          </section>
+        </>
       )}
     </main>
   )
