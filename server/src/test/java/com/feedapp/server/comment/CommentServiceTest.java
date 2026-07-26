@@ -130,6 +130,80 @@ class CommentServiceTest {
     }
 
     @Test
+    @DisplayName("유효한 요청이면 댓글 수정하고 정보 반환")
+    void updateComment() {
+        final Long id = 1L;
+        final Long postId = 1L;
+        final String author = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var comment = new Comment(id, postId, "content", author, createdAt);
+        final var updated = new Comment(id, postId, "newContent", author, createdAt);
+        when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
+        when(commentRepository.save(any(Comment.class))).thenReturn(updated);
+
+        final CommentResponse result = commentService.update(id, "newContent", author);
+
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getPostId()).isEqualTo(postId);
+        assertThat(result.getContent()).isEqualTo("newContent");
+        assertThat(result.getAuthor()).isEqualTo(author);
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+
+        verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("댓글이 없으면 수정 실패")
+    void updateCommentWhenNotFound() {
+        final Long id = 1L;
+        when(commentRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.update(id, "newContent", "author"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("댓글 없음");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 수정 실패")
+    void updateCommentWhenNotAuthor() {
+        final Long id = 1L;
+        final var comment = new Comment(id, 1L, "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.update(id, "newContent", "other"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("권한 없음");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("댓글이 비어 있으면 수정 실패")
+    void updateCommentWhenContentEmpty() {
+        assertThatThrownBy(() -> commentService.update(1L, "", "author"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("댓글 입력하세요");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+        verify(commentRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("댓글이 100자를 넘으면 수정 실패")
+    void updateCommentWhenContentTooLong() {
+        final String content = "a".repeat(101);
+
+        assertThatThrownBy(() -> commentService.update(1L, content, "author"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("너무 길어요");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+        verify(commentRepository, never()).findById(any());
+    }
+
+    @Test
     @DisplayName("유효한 요청이면 댓글 삭제 성공")
     void deleteComment() {
         final Long id = 1L;

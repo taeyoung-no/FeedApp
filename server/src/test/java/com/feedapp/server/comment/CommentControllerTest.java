@@ -7,6 +7,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -146,6 +147,77 @@ class CommentControllerTest {
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 댓글 수정 성공")
+    void updateComment() throws Exception {
+        final Long id = 1L;
+        final Long postId = 1L;
+        final String username = "author";
+        final var request = new UpdateCommentRequest("newContent");
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(commentService.update(id, request.content(), username))
+                .thenReturn(new CommentResponse(id, postId, request.content(), username, createdAt));
+
+        mockMvc.perform(put("/api/comments/{id}", id)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.postId").value(postId))
+                .andExpect(jsonPath("$.content").value(request.content()))
+                .andExpect(jsonPath("$.author").value(username))
+                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
+    }
+
+    @Test
+    @DisplayName("토큰이 없으면 댓글 수정 실패")
+    void updateCommentWithoutToken() throws Exception {
+        final var request = new UpdateCommentRequest("newContent");
+
+        mockMvc.perform(put("/api/comments/{id}", 1L)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("댓글이 없으면 수정 실패")
+    void updateCommentWhenNotFound() throws Exception {
+        final Long id = 1L;
+        final String username = "author";
+        final var request = new UpdateCommentRequest("newContent");
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(commentService.update(id, request.content(), username))
+                .thenThrow(new NotFoundException("댓글 없음"));
+
+        mockMvc.perform(put("/api/comments/{id}", id)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("댓글 없음"));
+    }
+
+    @Test
+    @DisplayName("작성자가 아니면 수정 실패")
+    void updateCommentWhenNotAuthor() throws Exception {
+        final Long id = 1L;
+        final String username = "other";
+        final var request = new UpdateCommentRequest("newContent");
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(commentService.update(id, request.content(), username))
+                .thenThrow(new ForbiddenException("권한 없음"));
+
+        mockMvc.perform(put("/api/comments/{id}", id)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("권한 없음"));
     }
 
     @Test

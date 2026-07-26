@@ -44,6 +44,19 @@ public class CommentService {
         }
     }
 
+    public CommentResponse update(Long id, String content, String username) {
+        validateContent(content);
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("댓글 없음"));
+        if (!comment.getAuthor().equals(username)) {
+            throw new ForbiddenException("권한 없음");
+        }
+        Comment updated = commentRepository.save(
+                new Comment(id, comment.getPostId(), content, comment.getAuthor(), comment.getCreatedAt())
+        );
+        return toResponse(updated);
+    }
+
     public void delete(Long id, String username) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("댓글 없음"));

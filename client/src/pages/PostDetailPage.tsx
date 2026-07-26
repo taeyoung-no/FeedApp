@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createComment, getComments, type CommentResponse } from '../api/comment'
+import { createComment, getComments, updateComment, type CommentResponse } from '../api/comment'
 import { deletePost, getPost, type PostResponse } from '../api/post'
 import { createCommentSchema, type CreateCommentFormData } from '../schemas/comment'
 import { useAuthStore } from '../store/authStore'
@@ -19,12 +19,22 @@ function PostDetailPage() {
 
   const [comments, setComments] = useState<CommentResponse[]>([])
   const [commentsError, setCommentsError] = useState<string | null>(null)
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null)
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
+  } = useForm<CreateCommentFormData>({
+    resolver: zodResolver(createCommentSchema),
+  })
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors, isSubmitting: isSubmittingEdit },
   } = useForm<CreateCommentFormData>({
     resolver: zodResolver(createCommentSchema),
   })
@@ -123,6 +133,33 @@ function PostDetailPage() {
     }
   }
 
+  const startEditComment = (comment: CommentResponse) => {
+    setEditingCommentId(comment.id)
+    resetEdit({ content: comment.content })
+  }
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null)
+    resetEdit()
+  }
+
+  const onSubmitEditComment = async (values: CreateCommentFormData) => {
+    if (editingCommentId == null) return
+
+    try {
+      const updated = await updateComment(editingCommentId, { content: values.content })
+      setComments((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+      setEditingCommentId(null)
+      resetEdit()
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message ?? '댓글 수정 실패')
+      } else {
+        alert('댓글 수정 실패')
+      }
+    }
+  }
+
   return (
     <main className="max-w-2xl mx-auto w-full">
       {isLoading && <p className="text-center text-2xl">글 불러오는 중...</p>}
@@ -160,12 +197,60 @@ function PostDetailPage() {
 
             <ul className="space-y-4 mb-6">
               {comments.length === 0 && !commentsError && <li className="text-gray-500">댓글이 없습니다</li>}
-              {comments.map((comment) => (
-                <li key={comment.id}>
-                  <p className="text-sm text-gray-500 mb-1">{`${comment.author} · ${formatDate(comment.createdAt)}`}</p>
-                  <p className="whitespace-pre-wrap break-words">{comment.content}</p>
-                </li>
-              ))}
+              {comments.map((comment) => {
+                const isAuthor = !!user && user.username === comment.author
+                const isEditing = editingCommentId === comment.id
+
+                return (
+                  <li key={comment.id}>
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <p className="text-sm text-gray-500">{`${comment.author} · ${formatDate(comment.createdAt)}`}</p>
+                      {isAuthor && !isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => startEditComment(comment)}
+                          className="text-black cursor-pointer hover:underline shrink-0"
+                        >
+                          수정
+                        </button>
+                      )}
+                    </div>
+
+                    {isEditing ? (
+                      <form onSubmit={handleSubmitEdit(onSubmitEditComment)} noValidate>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-gray-300"
+                          disabled={isSubmittingEdit}
+                          {...registerEdit('content')}
+                        />
+                        <div className="min-h-6">
+                          {editErrors.content && <p className="text-red-500">{editErrors.content.message}</p>}
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={cancelEditComment}
+                            disabled={isSubmittingEdit}
+                            className="cursor-pointer px-3 py-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingEdit}
+                            className="cursor-pointer px-3 py-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSubmittingEdit ? '저장 중…' : '저장'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words">{comment.content}</p>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
 
             <form onSubmit={handleSubmit(onSubmitComment)} noValidate>
