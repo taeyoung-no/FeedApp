@@ -1,8 +1,11 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createComment, getComments, type CommentResponse } from '../api/comment'
 import { deletePost, getPost, type PostResponse } from '../api/post'
+import { createCommentSchema, type CreateCommentFormData } from '../schemas/comment'
 import { useAuthStore } from '../store/authStore'
 
 function PostDetailPage() {
@@ -16,8 +19,15 @@ function PostDetailPage() {
 
   const [comments, setComments] = useState<CommentResponse[]>([])
   const [commentsError, setCommentsError] = useState<string | null>(null)
-  const [commentContent, setCommentContent] = useState('')
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateCommentFormData>({
+    resolver: zodResolver(createCommentSchema),
+  })
 
   useEffect(() => {
     if (!id) return
@@ -92,31 +102,24 @@ function PostDetailPage() {
     }
   }
 
-  const handleCreateComment = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!id || isSubmittingComment) return
-
-    const content = commentContent.trim()
-    if (!content) return
+  const onSubmitComment = async (values: CreateCommentFormData) => {
+    if (!id) return
 
     if (!user) {
       navigate('/login')
       return
     }
 
-    setIsSubmittingComment(true)
     try {
-      const created = await createComment(id, { content })
+      const created = await createComment(id, { content: values.content })
       setComments((prev) => [created, ...prev])
-      setCommentContent('')
+      reset()
     } catch (err) {
       if (axios.isAxiosError(err)) {
         alert(err.response?.data?.message ?? '댓글 작성 실패')
       } else {
         alert('댓글 작성 실패')
       }
-    } finally {
-      setIsSubmittingComment(false)
     }
   }
 
@@ -165,22 +168,24 @@ function PostDetailPage() {
               ))}
             </ul>
 
-            <form onSubmit={handleCreateComment}>
+            <form onSubmit={handleSubmit(onSubmitComment)} noValidate>
               <input
                 type="text"
-                value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
                 placeholder="댓글을 입력하세요"
-                className="w-full px-4 py-3 border border-gray-300 mb-2"
-                disabled={isSubmittingComment}
+                className="w-full px-4 py-3 border border-gray-300"
+                disabled={isSubmitting}
+                {...register('content')}
               />
+              <div className="min-h-6">
+                {errors.content && <p className="text-red-500">{errors.content.message}</p>}
+              </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isSubmittingComment}
+                  disabled={isSubmitting}
                   className="cursor-pointer px-3 py-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmittingComment ? '작성 중…' : '작성'}
+                  {isSubmitting ? '작성 중…' : '작성'}
                 </button>
               </div>
             </form>

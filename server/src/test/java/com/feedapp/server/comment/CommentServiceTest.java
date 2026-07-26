@@ -106,6 +106,30 @@ class CommentServiceTest {
     }
 
     @Test
+    @DisplayName("댓글이 비어 있으면 작성 실패")
+    void createWhenContentEmpty() {
+        assertThatThrownBy(() -> commentService.create(1L, "", "author"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("댓글 입력하세요");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+        verify(postRepository, never()).existsById(any());
+    }
+
+    @Test
+    @DisplayName("댓글이 100자를 넘으면 작성 실패")
+    void createWhenContentTooLong() {
+        final String content = "a".repeat(101);
+
+        assertThatThrownBy(() -> commentService.create(1L, content, "author"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("너무 길어요");
+
+        verify(commentRepository, never()).save(any(Comment.class));
+        verify(postRepository, never()).existsById(any());
+    }
+
+    @Test
     @DisplayName("유효한 요청이면 댓글 삭제 성공")
     void deleteComment() {
         final Long id = 1L;

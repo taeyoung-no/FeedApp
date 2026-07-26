@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CommentService {
 
+    private static final int CONTENT_MAX_LENGTH = 100;
+
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
 
@@ -23,6 +25,7 @@ public class CommentService {
     }
 
     public CommentResponse create(Long postId, String content, String author) {
+        validateContent(content);
         if (!postRepository.existsById(postId)) {
             throw new NotFoundException("게시글 없음");
         }
@@ -30,6 +33,15 @@ public class CommentService {
                 new Comment(null, postId, content, author, LocalDateTime.now())
         );
         return toResponse(saved);
+    }
+
+    private void validateContent(String content) {
+        if (content == null || content.isEmpty()) {
+            throw new IllegalArgumentException("댓글 입력하세요");
+        }
+        if (content.length() > CONTENT_MAX_LENGTH) {
+            throw new IllegalArgumentException("너무 길어요");
+        }
     }
 
     public void delete(Long id, String username) {
