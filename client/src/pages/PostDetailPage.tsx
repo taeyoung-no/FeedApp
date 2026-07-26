@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createComment, getComments, updateComment, type CommentResponse } from '../api/comment'
+import { createComment, deleteComment, getComments, updateComment, type CommentResponse } from '../api/comment'
 import { deletePost, getPost, type PostResponse } from '../api/post'
 import { createCommentSchema, type CreateCommentFormData } from '../schemas/comment'
 import { useAuthStore } from '../store/authStore'
@@ -20,6 +20,7 @@ function PostDetailPage() {
   const [comments, setComments] = useState<CommentResponse[]>([])
   const [commentsError, setCommentsError] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null)
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null)
 
   const {
     register,
@@ -160,6 +161,28 @@ function PostDetailPage() {
     }
   }
 
+  const handleDeleteComment = async (commentId: number) => {
+    if (deletingCommentId != null) return
+
+    setDeletingCommentId(commentId)
+    try {
+      await deleteComment(commentId)
+      setComments((prev) => prev.filter((c) => c.id !== commentId))
+      if (editingCommentId === commentId) {
+        setEditingCommentId(null)
+        resetEdit()
+      }
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message ?? '댓글 삭제 실패')
+      } else {
+        alert('댓글 삭제 실패')
+      }
+    } finally {
+      setDeletingCommentId(null)
+    }
+  }
+
   return (
     <main className="max-w-2xl mx-auto w-full">
       {isLoading && <p className="text-center text-2xl">글 불러오는 중...</p>}
@@ -206,13 +229,23 @@ function PostDetailPage() {
                     <div className="flex items-center justify-between gap-3 mb-1">
                       <p className="text-sm text-gray-500">{`${comment.author} · ${formatDate(comment.createdAt)}`}</p>
                       {isAuthor && !isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => startEditComment(comment)}
-                          className="text-black cursor-pointer hover:underline shrink-0"
-                        >
-                          수정
-                        </button>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => startEditComment(comment)}
+                            className="text-black cursor-pointer hover:underline"
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            disabled={deletingCommentId === comment.id}
+                            className="text-black cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {deletingCommentId === comment.id ? '삭제 중…' : '삭제'}
+                          </button>
+                        </div>
                       )}
                     </div>
 

@@ -19,3 +19,7 @@ export async function updateComment(id: number, data: UpdateCommentRequest): Pro
   const response = await apiClient.put<CommentResponse>(`/comments/${id}`, data)
   return response.data
 }
+
+export async function deleteComment(id: number): Promise<void> {
+  await apiClient.delete(`/comments/${id}`)
+}
