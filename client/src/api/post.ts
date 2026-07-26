@@ -24,3 +24,7 @@ export async function updatePost(id: string, data: UpdatePostRequest): Promise<P
   const response = await apiClient.put<PostResponse>(`/posts/${id}`, data)
   return response.data
 }
+
+export async function deletePost(id: string): Promise<void> {
+  await apiClient.delete(`/posts/${id}`)
+}

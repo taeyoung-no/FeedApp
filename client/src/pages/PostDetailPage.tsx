@@ -1,14 +1,17 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getPost, type PostResponse } from '../api/post'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { deletePost, getPost, type PostResponse } from '../api/post'
 import { useAuthStore } from '../store/authStore'
 
 function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [post, setPost] = useState<PostResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -40,6 +43,23 @@ function PostDetailPage() {
     }
   }, [id])
 
+  const handleDelete = async () => {
+    if (!id || isDeleting) return
+
+    setIsDeleting(true)
+    try {
+      await deletePost(id)
+      navigate('/')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message ?? '글 삭제 실패')
+      } else {
+        alert('글 삭제 실패')
+      }
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <main className="max-w-2xl mx-auto w-full">
       {isLoading && <p className="text-center text-2xl">글 불러오는 중...</p>}
@@ -51,9 +71,19 @@ function PostDetailPage() {
           <div className="flex items-center gap-3 text-gray-500 mb-6">
             <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
             {user && user.username === post.author && (
-              <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
-                수정
-              </Link>
+              <>
+                <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
+                  수정
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-black cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? '삭제 중…' : '삭제'}
+                </button>
+              </>
             )}
           </div>
           <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
