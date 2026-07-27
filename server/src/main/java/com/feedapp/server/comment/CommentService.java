@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.post.Post;
 import com.feedapp.server.post.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,11 +27,10 @@ public class CommentService {
 
     public CommentResponse create(Long postId, String content, String author) {
         validateContent(content);
-        if (!postRepository.existsById(postId)) {
-            throw new NotFoundException("게시글 없음");
-        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("게시글 없음"));
         Comment saved = commentRepository.save(
-                new Comment(null, postId, content, author, LocalDateTime.now())
+                new Comment(null, post, content, author, LocalDateTime.now())
         );
         return toResponse(saved);
     }
@@ -52,7 +52,7 @@ public class CommentService {
             throw new ForbiddenException("권한 없음");
         }
         Comment updated = commentRepository.save(
-                new Comment(id, comment.getPostId(), content, comment.getAuthor(), comment.getCreatedAt())
+                new Comment(id, comment.getPost(), content, comment.getAuthor(), comment.getCreatedAt())
         );
         return toResponse(updated);
     }
@@ -69,12 +69,10 @@ public class CommentService {
     private CommentResponse toResponse(Comment comment) {
         return new CommentResponse(
                 comment.getId(),
-                comment.getPostId(),
+                comment.getPost().getId(),
                 comment.getContent(),
                 comment.getAuthor(),
                 comment.getCreatedAt()
         );
     }
 }
-
-

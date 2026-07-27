@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.feedapp.server.common.ForbiddenException;
-import com.feedapp.server.storage.ImageService;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.storage.ImageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -8,11 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.post.Post;
 import com.feedapp.server.post.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,9 +41,10 @@ class CommentServiceTest {
         final Long postId = 1L;
         final var createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
         final var createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final Post post = post(postId);
         when(commentRepository.findByPostIdOrderByCreatedAtDesc(postId)).thenReturn(List.of(
-                new Comment(1L, postId, "content1", "author1", createdAt1),
-                new Comment(2L, postId, "content2", "author2", createdAt2)
+                new Comment(1L, post, "content1", "author1", createdAt1),
+                new Comment(2L, post, "content2", "author2", createdAt2)
         ));
 
         final List<CommentResponse> result = commentService.findByPostId(postId);
@@ -77,8 +80,9 @@ class CommentServiceTest {
         final String content = "content";
         final String author = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final var saved = new Comment(1L, postId, content, author, createdAt);
-        when(postRepository.existsById(postId)).thenReturn(true);
+        final Post post = post(postId);
+        final var saved = new Comment(1L, post, content, author, createdAt);
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post));
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
 
         final CommentResponse result = commentService.create(postId, content, author);
@@ -96,7 +100,7 @@ class CommentServiceTest {
     @DisplayName("게시글이 없으면 댓글 작성 실패")
     void createWhenPostNotFound() {
         final Long postId = 1L;
-        when(postRepository.existsById(postId)).thenReturn(false);
+        when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.create(postId, "content", "author"))
                 .isInstanceOf(NotFoundException.class)
@@ -113,7 +117,7 @@ class CommentServiceTest {
                 .hasMessage("댓글 입력하세요");
 
         verify(commentRepository, never()).save(any(Comment.class));
-        verify(postRepository, never()).existsById(any());
+        verify(postRepository, never()).findById(any());
     }
 
     @Test
@@ -126,7 +130,7 @@ class CommentServiceTest {
                 .hasMessage("너무 길어요");
 
         verify(commentRepository, never()).save(any(Comment.class));
-        verify(postRepository, never()).existsById(any());
+        verify(postRepository, never()).findById(any());
     }
 
     @Test
@@ -136,8 +140,9 @@ class CommentServiceTest {
         final Long postId = 1L;
         final String author = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final var comment = new Comment(id, postId, "content", author, createdAt);
-        final var updated = new Comment(id, postId, "newContent", author, createdAt);
+        final Post post = post(postId);
+        final var comment = new Comment(id, post, "content", author, createdAt);
+        final var updated = new Comment(id, post, "newContent", author, createdAt);
         when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
         when(commentRepository.save(any(Comment.class))).thenReturn(updated);
 
@@ -169,7 +174,7 @@ class CommentServiceTest {
     @DisplayName("작성자가 아니면 수정 실패")
     void updateCommentWhenNotAuthor() {
         final Long id = 1L;
-        final var comment = new Comment(id, 1L, "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var comment = new Comment(id, post(1L), "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
         when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
 
         assertThatThrownBy(() -> commentService.update(id, "newContent", "other"))
@@ -208,7 +213,7 @@ class CommentServiceTest {
     void deleteComment() {
         final Long id = 1L;
         final String author = "author";
-        final var comment = new Comment(id, 1L, "content", author, LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var comment = new Comment(id, post(1L), "content", author, LocalDateTime.of(2026, 1, 1, 10, 0));
         when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
 
         commentService.delete(id, author);
@@ -233,7 +238,7 @@ class CommentServiceTest {
     @DisplayName("작성자가 아니면 삭제 실패")
     void deleteCommentWhenNotAuthor() {
         final Long id = 1L;
-        final var comment = new Comment(id, 1L, "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var comment = new Comment(id, post(1L), "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
         when(commentRepository.findById(id)).thenReturn(Optional.of(comment));
 
         assertThatThrownBy(() -> commentService.delete(id, "other"))
@@ -241,5 +246,9 @@ class CommentServiceTest {
                 .hasMessage("권한 없음");
 
         verify(commentRepository, never()).delete(any(Comment.class));
+    }
+
+    private static Post post(Long id) {
+        return new Post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0), new ArrayList<>());
     }
 }
