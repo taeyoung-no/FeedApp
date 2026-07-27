@@ -53,8 +53,8 @@ class PostControllerTest {
         final var createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
         final var createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postService.findAll()).thenReturn(List.of(
-                new PostResponse(1L, "title1", "content1", "author1", createdAt1),
-                new PostResponse(2L, "title2", "content2", "author2", createdAt2)
+                new PostResponse(1L, "title1", "content1", "author1", createdAt1, List.of()),
+                new PostResponse(2L, "title2", "content2", "author2", createdAt2, List.of())
         ));
 
         mockMvc.perform(get("/api/posts")).andExpect(status().isOk())
@@ -87,7 +87,7 @@ class PostControllerTest {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postService.findById(id)).thenReturn(
-                new PostResponse(id, "title", "content", "author", createdAt)
+                new PostResponse(id, "title", "content", "author", createdAt, List.of())
         );
 
         mockMvc.perform(get("/api/posts/{id}", id))
@@ -114,11 +114,11 @@ class PostControllerTest {
     @DisplayName("유효한 요청이면 토큰 username으로 게시글 작성 성공")
     void create() throws Exception {
         final String username = "author";
-        final var request = new CreatePostRequest("title", "content");
+        final var request = new CreatePostRequest("title", "content", null);
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
-        when(postService.create(request.title(), request.content(), username))
-                .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt));
+        when(postService.create(request.title(), request.content(), username, null))
+                .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt, List.of()));
 
         mockMvc.perform(post("/api/posts")
                         .cookie(new Cookie("accessToken", token))
@@ -135,7 +135,7 @@ class PostControllerTest {
     @Test
     @DisplayName("토큰이 없으면 게시글 작성 실패")
     void createWithoutToken() throws Exception {
-        final var request = new CreatePostRequest("title", "content");
+        final var request = new CreatePostRequest("title", "content", null);
 
         mockMvc.perform(post("/api/posts")
                         .contentType(APPLICATION_JSON)
@@ -146,7 +146,7 @@ class PostControllerTest {
     @Test
     @DisplayName("리프레시 토큰이면 게시글 작성 실패")
     void createWithRefreshToken() throws Exception {
-        final var request = new CreatePostRequest("title", "content");
+        final var request = new CreatePostRequest("title", "content", null);
         final String token = jwtTokenProvider.createRefreshToken("author");
 
         mockMvc.perform(post("/api/posts")
@@ -216,7 +216,7 @@ class PostControllerTest {
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.update(id, request.title(), request.content(), username))
-                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt));
+                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, List.of()));
 
         mockMvc.perform(put("/api/posts/{id}", id)
                         .cookie(new Cookie("accessToken", token))
@@ -275,6 +275,72 @@ class PostControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("권한 없음"));
+    }
+
+    @Test
+    @DisplayName("이미지 포함 유효한 요청이면 게시글 작성 성공")
+    void createWithImageKeys() throws Exception {
+        final String username = "author";
+        final var imageKeys = List.of("posts/a.jpg", "posts/b.png");
+        final var images = List.of(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a"),
+                new PostImageResponse("posts/b.png", "https://example.com/b")
+        );
+        final var request = new CreatePostRequest("title", "content", imageKeys);
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(postService.create(request.title(), request.content(), username, imageKeys))
+                .thenReturn(new PostResponse(
+                        1L, request.title(), request.content(), username, createdAt, images
+                ));
+
+        mockMvc.perform(post("/api/posts")
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value(request.title()))
+                .andExpect(jsonPath("$.content").value(request.content()))
+                .andExpect(jsonPath("$.author").value(username))
+                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"))
+                .andExpect(jsonPath("$.images.length()").value(2))
+                .andExpect(jsonPath("$.images[0].key").value("posts/a.jpg"))
+                .andExpect(jsonPath("$.images[0].url").value("https://example.com/a"))
+                .andExpect(jsonPath("$.images[1].key").value("posts/b.png"))
+                .andExpect(jsonPath("$.images[1].url").value("https://example.com/b"));
+    }
+
+    @Test
+    @DisplayName("상세 조회 시 이미지 key와 url 포함")
+    void findByIdWithImages() throws Exception {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var images = List.of(new PostImageResponse("posts/a.jpg", "https://example.com/a"));
+        when(postService.findById(id)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, images)
+        );
+
+        mockMvc.perform(get("/api/posts/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.images.length()").value(1))
+                .andExpect(jsonPath("$.images[0].key").value("posts/a.jpg"))
+                .andExpect(jsonPath("$.images[0].url").value("https://example.com/a"));
+    }
+
+    @Test
+    @DisplayName("상세 조회 시 이미지가 없으면 빈 목록 반환")
+    void findByIdWithoutImages() throws Exception {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postService.findById(id)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, List.of())
+        );
+
+        mockMvc.perform(get("/api/posts/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images.length()").value(0));
     }
 }
 

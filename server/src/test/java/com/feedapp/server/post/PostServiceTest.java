@@ -8,10 +8,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import com.feedapp.server.common.ForbiddenException;
+import com.feedapp.server.storage.ImageService;
 import com.feedapp.server.common.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,9 @@ class PostServiceTest {
     @Mock
     PostRepository postRepository;
 
+    @Mock
+    ImageService imageService;
+
     @InjectMocks
     PostService postService;
 
@@ -35,8 +40,8 @@ class PostServiceTest {
         final var createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
         final var createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(
-                new Post(1L, "title1", "content1", "author1", createdAt1),
-                new Post(2L, "title2", "content2", "author2", createdAt2)
+                post(1L, "title1", "content1", "author1", createdAt1, List.of()),
+                post(2L, "title2", "content2", "author2", createdAt2, List.of())
         ));
 
         final List<PostResponse> result = postService.findAll();
@@ -70,7 +75,7 @@ class PostServiceTest {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postRepository.findById(id)).thenReturn(Optional.of(
-                new Post(id, "title", "content", "author", createdAt)
+                post(id, "title", "content", "author", createdAt, List.of())
         ));
 
         final PostResponse result = postService.findById(id);
@@ -100,10 +105,10 @@ class PostServiceTest {
         final String content = "content";
         final String author = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final var saved = new Post(1L, title, content, author, createdAt);
+        final var saved = post(1L, title, content, author, createdAt, List.of());
         when(postRepository.save(any(Post.class))).thenReturn(saved);
 
-        final PostResponse result = postService.create(title, content, author);
+        final PostResponse result = postService.create(title, content, author, null);
 
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getTitle()).isEqualTo(title);
@@ -119,7 +124,7 @@ class PostServiceTest {
     void deletePost() {
         final Long id = 1L;
         final String author = "author";
-        final var post = new Post(id, "title", "content", author, LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var post = post(id, "title", "content", author, LocalDateTime.of(2026, 1, 1, 10, 0), List.of());
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
 
         postService.delete(id, author);
@@ -144,7 +149,7 @@ class PostServiceTest {
     @DisplayName("작성자가 아니면 삭제 실패")
     void deletePostWhenNotAuthor() {
         final Long id = 1L;
-        final var post = new Post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var post = post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0), List.of());
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
 
         assertThatThrownBy(() -> postService.delete(id, "other"))
@@ -160,8 +165,8 @@ class PostServiceTest {
         final Long id = 1L;
         final String author = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        final var post = new Post(id, "title", "content", author, createdAt);
-        final var updated = new Post(id, "newTitle", "newContent", author, createdAt);
+        final var post = post(id, "title", "content", author, createdAt, List.of());
+        final var updated = post(id, "newTitle", "newContent", author, createdAt, List.of());
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
         when(postRepository.save(any(Post.class))).thenReturn(updated);
 
@@ -193,7 +198,7 @@ class PostServiceTest {
     @DisplayName("작성자가 아니면 수정 실패")
     void updatePostWhenNotAuthor() {
         final Long id = 1L;
-        final var post = new Post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0));
+        final var post = post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0), List.of());
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
 
         assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "other"))
@@ -201,5 +206,113 @@ class PostServiceTest {
                 .hasMessage("권한 없음");
 
         verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("이미지 키가 있으면 저장하고 key·url 응답에 포함")
+    void createWithImageKeys() {
+        final String title = "title";
+        final String content = "content";
+        final String author = "author";
+        final var imageKeys = List.of("posts/a.jpg", "posts/b.png");
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var saved = post(1L, title, content, author, createdAt, imageKeys);
+        when(postRepository.save(any(Post.class))).thenReturn(saved);
+        when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
+        when(imageService.createDownloadUrl("posts/b.png")).thenReturn("https://example.com/b");
+
+        final PostResponse result = postService.create(title, content, author, imageKeys);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getTitle()).isEqualTo(title);
+        assertThat(result.getContent()).isEqualTo(content);
+        assertThat(result.getAuthor()).isEqualTo(author);
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(result.getImages()).containsExactly(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a"),
+                new PostImageResponse("posts/b.png", "https://example.com/b")
+        );
+
+        verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("이미지 키가 null이면 빈 목록으로 저장")
+    void createWithNullImageKeys() {
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var saved = post(1L, "title", "content", "author", createdAt, List.of());
+        when(postRepository.save(any(Post.class))).thenReturn(saved);
+
+        final PostResponse result = postService.create("title", "content", "author", null);
+
+        assertThat(result.getImages()).isEmpty();
+        verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("상세 조회 시 이미지 key·url 포함")
+    void findByIdWithImages() {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var imageKeys = List.of("posts/a.jpg");
+        when(postRepository.findById(id)).thenReturn(Optional.of(
+                post(id, "title", "content", "author", createdAt, imageKeys)
+        ));
+        when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
+
+        final PostResponse result = postService.findById(id);
+
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getImages()).containsExactly(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a")
+        );
+    }
+
+    @Test
+    @DisplayName("상세 조회 시 이미지가 없으면 빈 목록")
+    void findByIdWithoutImages() {
+        final Long id = 1L;
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postRepository.findById(id)).thenReturn(Optional.of(
+                post(id, "title", "content", "author", createdAt, List.of())
+        ));
+
+        final PostResponse result = postService.findById(id);
+
+        assertThat(result.getImages()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("목록 조회 시 이미지 key·url 포함")
+    void findAllWithImages() {
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(
+                post(1L, "title", "content", "author", createdAt, List.of("posts/a.jpg"))
+        ));
+        when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
+
+        final List<PostResponse> result = postService.findAll();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getImages()).containsExactly(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a")
+        );
+    }
+
+    private static Post post(
+            Long id,
+            String title,
+            String content,
+            String author,
+            LocalDateTime createdAt,
+            List<String> imageKeys
+    ) {
+        Post post = new Post(id, title, content, author, createdAt, new ArrayList<>());
+        if (imageKeys != null) {
+            for (int i = 0; i < imageKeys.size(); i++) {
+                post.getImages().add(new PostImage(null, post, imageKeys.get(i), i));
+            }
+        }
+        return post;
     }
 }

@@ -1,10 +1,12 @@
 package com.feedapp.server.post;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.storage.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ public class PostService {
     private static final int CONTENT_MAX_LENGTH = 500;
 
     private final PostRepository postRepository;
+    private final ImageService imageService;
 
     public List<PostResponse> findAll() {
         return postRepository.findAllByOrderByCreatedAtDesc().stream()
@@ -28,9 +31,11 @@ public class PostService {
         return toResponse(post);
     }
 
-    public PostResponse create(String title, String content, String author) {
+    public PostResponse create(String title, String content, String author, List<String> imageKeys) {
         validateContent(content);
-        Post saved = postRepository.save(new Post(null, title, content, author, LocalDateTime.now()));
+        Post post = new Post(null, title, content, author, LocalDateTime.now(), new ArrayList<>());
+        addImages(post, imageKeys);
+        Post saved = postRepository.save(post);
         return toResponse(saved);
     }
 
@@ -50,10 +55,23 @@ public class PostService {
         if (!post.getAuthor().equals(username)) {
             throw new ForbiddenException("권한 없음");
         }
-        Post updated = postRepository.save(
-                new Post(id, title, content, post.getAuthor(), post.getCreatedAt())
+        Post updated = new Post(
+                id,
+                title,
+                content,
+                post.getAuthor(),
+                post.getCreatedAt(),
+                new ArrayList<>()
         );
-        return toResponse(updated);
+        for (PostImage image : post.getImages()) {
+            updated.getImages().add(new PostImage(
+                    image.getId(),
+                    updated,
+                    image.getImageKey(),
+                    image.getPosition()
+            ));
+        }
+        return toResponse(postRepository.save(updated));
     }
 
     private void validateContent(String content) {
@@ -65,13 +83,29 @@ public class PostService {
         }
     }
 
+    private void addImages(Post post, List<String> imageKeys) {
+        if (imageKeys == null) {
+            return;
+        }
+        for (int i = 0; i < imageKeys.size(); i++) {
+            post.getImages().add(new PostImage(null, post, imageKeys.get(i), i));
+        }
+    }
+
     private PostResponse toResponse(Post post) {
+        List<PostImageResponse> images = post.getImages().stream()
+                .map((image) -> new PostImageResponse(
+                        image.getImageKey(),
+                        imageService.createDownloadUrl(image.getImageKey())
+                ))
+                .toList();
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getContent(),
                 post.getAuthor(),
-                post.getCreatedAt()
+                post.getCreatedAt(),
+                images
         );
     }
 }

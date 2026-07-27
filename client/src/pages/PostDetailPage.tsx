@@ -210,6 +210,16 @@ function PostDetailPage() {
                 </>
               )}
             </div>
+            <div className="mt-6 space-y-4">
+              {post.images.map((image) => (
+                <img
+                  key={image.key}
+                  src={image.url}
+                  alt=""
+                  className="w-full max-h-[32rem] object-contain"
+                />
+              ))}
+            </div>
             <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
           </article>
 

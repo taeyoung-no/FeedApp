@@ -93,6 +93,7 @@ function CreatePostPage() {
       await createPost({
         title: values.title,
         content: values.content,
+        imageKeys: images.map((image) => image.key),
       })
       navigate('/')
     } catch (error) {

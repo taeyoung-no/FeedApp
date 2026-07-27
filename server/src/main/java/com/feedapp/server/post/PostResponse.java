@@ -1,6 +1,7 @@
 package com.feedapp.server.post;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,4 +22,6 @@ public class PostResponse {
     private final String author;
     @NotNull
     private final LocalDateTime createdAt;
+    @NotNull
+    private final List<PostImageResponse> images;
 }

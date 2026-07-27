@@ -41,7 +41,8 @@ public class PostController {
         return postService.create(
                 request.title(),
                 request.content(),
-                authentication.getName()
+                authentication.getName(),
+                request.imageKeys()
         );
     }
 
