@@ -220,7 +220,7 @@ function PostDetailPage() {
                 />
               ))}
             </div>
-            <div className="whitespace-pre-wrap break-words text-xl">{post.content}</div>
+            <div className="mt-6 whitespace-pre-wrap break-words text-xl">{post.content}</div>
           </article>
 
           <section className="mt-10">
