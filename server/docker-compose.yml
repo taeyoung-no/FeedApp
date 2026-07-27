@@ -6,5 +6,18 @@ services:
     volumes:
       - redis-data:/data
 
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: feedapp
+      MYSQL_PASSWORD: qwer1234
+      MYSQL_ROOT_PASSWORD: qwer1234
+      MYSQL_USER: admin
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
 volumes:
   redis-data:
+  mysql-data:
