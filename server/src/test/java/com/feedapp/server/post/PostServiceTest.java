@@ -133,6 +133,28 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 삭제 시 연결된 S3 객체도 삭제")
+    void deletePostWithImages() {
+        final Long id = 1L;
+        final String author = "author";
+        final var post = post(
+                id,
+                "title",
+                "content",
+                author,
+                LocalDateTime.of(2026, 1, 1, 10, 0),
+                List.of("posts/a.jpg", "posts/b.png")
+        );
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+
+        postService.delete(id, author);
+
+        verify(imageService).delete("posts/a.jpg");
+        verify(imageService).delete("posts/b.png");
+        verify(postRepository).delete(post);
+    }
+
+    @Test
     @DisplayName("게시글이 없으면 삭제 실패")
     void deletePostWhenNotFound() {
         final Long id = 1L;

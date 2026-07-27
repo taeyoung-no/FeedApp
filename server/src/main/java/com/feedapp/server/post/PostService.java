@@ -45,6 +45,12 @@ public class PostService {
         if (!post.getAuthor().equals(username)) {
             throw new ForbiddenException("권한 없음");
         }
+        List<String> imageKeys = post.getImages().stream()
+                .map(PostImage::getImageKey)
+                .toList();
+        for (String imageKey : imageKeys) {
+            imageService.delete(imageKey);
+        }
         postRepository.delete(post);
     }
 
