@@ -277,7 +277,7 @@ export interface components {
             username: string;
         };
         CreateUploadUrlRequest: {
-            contentType?: string;
+            contentType: string;
         };
         PresignedUpload: {
             key: string;

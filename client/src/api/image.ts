@@ -1,14 +1,12 @@
 import { apiClient } from './client'
+import type { components } from './generated/schema'
 
-export type PresignedUpload = {
-  key: string
-  uploadUrl: string
-}
+export type PresignedUpload = components['schemas']['PresignedUpload']
+export type CreateUploadUrlRequest = components['schemas']['CreateUploadUrlRequest']
+export type PresignedDownload = components['schemas']['PresignedDownload']
 
 export async function createUploadUrl(contentType: string): Promise<PresignedUpload> {
-  const response = await apiClient.post<PresignedUpload>('/images/upload-url', {
-    contentType,
-  })
+  const response = await apiClient.post<PresignedUpload>('/images/upload-url', { contentType })
   return response.data
 }
 

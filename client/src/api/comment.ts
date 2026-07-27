@@ -3,7 +3,7 @@ import type { components } from './generated/schema'
 
 export type CommentResponse = components['schemas']['CommentResponse']
 export type CreateCommentRequest = components['schemas']['CreateCommentRequest']
-export type UpdateCommentRequest = { content: string }
+export type UpdateCommentRequest = components['schemas']['UpdateCommentRequest']
 
 export async function getComments(postId: string): Promise<CommentResponse[]> {
   const response = await apiClient.get<CommentResponse[]>(`/posts/${postId}/comments`)
