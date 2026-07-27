@@ -1,19 +1,17 @@
 package com.feedapp.server.storage;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.InputStream;
 
 import com.feedapp.server.auth.JwtAuthFilter;
 import com.feedapp.server.auth.JwtTokenProvider;
@@ -25,9 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(ImageController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class, JwtTokenProvider.class, GlobalExceptionHandler.class})
@@ -37,60 +35,102 @@ class ImageControllerTest {
     MockMvc mockMvc;
 
     @Autowired
+    ObjectMapper objectMapper;
+
+    @Autowired
     JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
     ImageService imageService;
 
     @Test
-    @DisplayName("유효한 요청이면 이미지 업로드 성공")
-    void upload() throws Exception {
+    @DisplayName("유효한 요청이면 업로드용 presigned URL 발급 성공")
+    void createUploadUrl() throws Exception {
         final String token = jwtTokenProvider.createAccessToken("author");
-        final byte[] bytes = {1, 2, 3};
-        final var file = new MockMultipartFile("file", "image.jpg", "image/jpeg", bytes);
-        final var stored = new StoredImage(
+        final var request = new CreateUploadUrlRequest("image/jpeg");
+        final var response = new PresignedUpload(
                 "posts/image.jpg",
-                "https://feedapp-photos.s3.ap-northeast-2.amazonaws.com/posts/image.jpg"
+                "https://example.com/upload-url"
         );
-        when(imageService.upload(any(InputStream.class), eq("image/jpeg"), eq(3L)))
-                .thenReturn(stored);
+        when(imageService.createUploadUrl("image/jpeg")).thenReturn(response);
 
-        mockMvc.perform(multipart("/api/images")
-                        .file(file)
-                        .cookie(new Cookie("accessToken", token)))
+        mockMvc.perform(post("/api/images/upload-url")
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.key").value(stored.key()))
-                .andExpect(jsonPath("$.url").value(stored.url()));
+                .andExpect(jsonPath("$.key").value(response.key()))
+                .andExpect(jsonPath("$.uploadUrl").value(response.uploadUrl()));
 
-        verify(imageService).upload(any(InputStream.class), eq("image/jpeg"), eq(3L));
+        verify(imageService).createUploadUrl("image/jpeg");
     }
 
     @Test
-    @DisplayName("토큰이 없으면 이미지 업로드 실패")
-    void uploadWithoutToken() throws Exception {
-        final var file = new MockMultipartFile("file", "image.jpg", "image/jpeg", new byte[] {1, 2, 3});
+    @DisplayName("토큰이 없으면 업로드 URL 발급 실패")
+    void createUploadUrlWithoutToken() throws Exception {
+        final var request = new CreateUploadUrlRequest("image/jpeg");
 
-        mockMvc.perform(multipart("/api/images").file(file))
+        mockMvc.perform(post("/api/images/upload-url")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
 
-        verify(imageService, never()).upload(any(), any(), anyLong());
+        verify(imageService, never()).createUploadUrl(anyString());
     }
 
     @Test
-    @DisplayName("허용되지 않는 형식이면 업로드 실패")
-    void uploadWhenUnsupportedType() throws Exception {
+    @DisplayName("허용되지 않는 형식이면 업로드 URL 발급 실패")
+    void createUploadUrlWhenUnsupportedType() throws Exception {
         final String token = jwtTokenProvider.createAccessToken("author");
-        final var file = new MockMultipartFile(
-                "file", "doc.pdf", "application/pdf", new byte[] {1}
-        );
-        when(imageService.upload(any(InputStream.class), eq("application/pdf"), eq(1L)))
+        final var request = new CreateUploadUrlRequest("application/pdf");
+        when(imageService.createUploadUrl("application/pdf"))
                 .thenThrow(new IllegalArgumentException("허용되지 않는 형식"));
 
-        mockMvc.perform(multipart("/api/images")
-                        .file(file)
-                        .cookie(new Cookie("accessToken", token)))
+        mockMvc.perform(post("/api/images/upload-url")
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("허용되지 않는 형식"));
+    }
+
+    @Test
+    @DisplayName("유효한 요청이면 조회용 presigned URL 발급 성공")
+    void createDownloadUrl() throws Exception {
+        final String token = jwtTokenProvider.createAccessToken("author");
+        final String key = "posts/image.jpg";
+        when(imageService.createDownloadUrl(key)).thenReturn("https://example.com/download-url");
+
+        mockMvc.perform(get("/api/images/download-url")
+                        .param("key", key)
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("https://example.com/download-url"));
+
+        verify(imageService).createDownloadUrl(key);
+    }
+
+    @Test
+    @DisplayName("토큰이 없으면 조회 URL 발급 실패")
+    void createDownloadUrlWithoutToken() throws Exception {
+        mockMvc.perform(get("/api/images/download-url").param("key", "posts/image.jpg"))
+                .andExpect(status().isUnauthorized());
+
+        verify(imageService, never()).createDownloadUrl(anyString());
+    }
+
+    @Test
+    @DisplayName("키가 없으면 조회 URL 발급 실패")
+    void createDownloadUrlWhenKeyMissing() throws Exception {
+        final String token = jwtTokenProvider.createAccessToken("author");
+        when(imageService.createDownloadUrl(" "))
+                .thenThrow(new IllegalArgumentException("사진이 없어요"));
+
+        mockMvc.perform(get("/api/images/download-url")
+                        .param("key", " ")
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("사진이 없어요"));
     }
 
     @Test
@@ -121,7 +161,7 @@ class ImageControllerTest {
     void deleteImageWhenKeyMissing() throws Exception {
         final String token = jwtTokenProvider.createAccessToken("author");
         doThrow(new IllegalArgumentException("삭제할 사진이 없어요"))
-                .when(imageService).delete(" ");
+                .when(imageService).delete(eq(" "));
 
         mockMvc.perform(delete("/api/images")
                         .param("key", " ")

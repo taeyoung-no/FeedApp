@@ -1,15 +1,14 @@
 package com.feedapp.server.storage;
 
-import java.io.IOException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,14 +16,16 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    @PostMapping("/api/images")
+    @PostMapping("/api/images/upload-url")
     @ResponseStatus(HttpStatus.CREATED)
-    public StoredImage upload(@RequestParam("file") MultipartFile file) throws IOException {
-        return imageService.upload(
-                file.getInputStream(),
-                file.getContentType(),
-                file.getSize()
-        );
+    public PresignedUpload createUploadUrl(@RequestBody CreateUploadUrlRequest request) {
+        return imageService.createUploadUrl(request.contentType());
+    }
+
+    @GetMapping("/api/images/download-url")
+    @ResponseStatus(HttpStatus.OK)
+    public PresignedDownload createDownloadUrl(@RequestParam("key") String key) {
+        return new PresignedDownload(imageService.createDownloadUrl(key));
     }
 
     @DeleteMapping("/api/images")

@@ -1,6 +1,5 @@
 package com.feedapp.server.storage;
 
-import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,16 +18,21 @@ public class ImageService {
 
     private final ImageStorage imageStorage;
 
-    public StoredImage upload(InputStream content, String contentType, long contentLength) {
+    public PresignedUpload createUploadUrl(String contentType) {
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new IllegalArgumentException("허용되지 않는 형식");
         }
-        if (contentLength <= 0) {
-            throw new IllegalArgumentException("사진이 없는 듯");
-        }
 
         String key = "posts/" + UUID.randomUUID() + extensionOf(contentType);
-        return imageStorage.upload(key, content, contentType, contentLength);
+        String uploadUrl = imageStorage.createPresignedUploadUrl(key, contentType);
+        return new PresignedUpload(key, uploadUrl);
+    }
+
+    public String createDownloadUrl(String key) {
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("사진이 없어요");
+        }
+        return imageStorage.createPresignedDownloadUrl(key);
     }
 
     public void delete(String key) {
