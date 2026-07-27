@@ -63,7 +63,8 @@ public class PostController {
                 id,
                 request.title(),
                 request.content(),
-                authentication.getName()
+                authentication.getName(),
+                request.imageKeys()
         );
     }
 }

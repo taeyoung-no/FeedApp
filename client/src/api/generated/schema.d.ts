@@ -222,6 +222,7 @@ export interface components {
         UpdatePostRequest: {
             title: string;
             content: string;
+            imageKeys?: string[];
         };
         PostImageResponse: {
             key: string;

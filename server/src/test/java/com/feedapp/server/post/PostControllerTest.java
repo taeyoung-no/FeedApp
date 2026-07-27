@@ -212,10 +212,10 @@ class PostControllerTest {
     void updatePost() throws Exception {
         final Long id = 1L;
         final String username = "author";
-        final var request = new UpdatePostRequest("newTitle", "newContent");
+        final var request = new UpdatePostRequest("newTitle", "newContent", List.of());
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
-        when(postService.update(id, request.title(), request.content(), username))
+        when(postService.update(id, request.title(), request.content(), username, request.imageKeys()))
                 .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, List.of()));
 
         mockMvc.perform(put("/api/posts/{id}", id)
@@ -233,7 +233,7 @@ class PostControllerTest {
     @Test
     @DisplayName("토큰이 없으면 게시글 수정 실패")
     void updatePostWithoutToken() throws Exception {
-        final var request = new UpdatePostRequest("newTitle", "newContent");
+        final var request = new UpdatePostRequest("newTitle", "newContent", List.of());
 
         mockMvc.perform(put("/api/posts/{id}", 1L)
                         .contentType(APPLICATION_JSON)
@@ -246,9 +246,9 @@ class PostControllerTest {
     void updatePostWhenNotFound() throws Exception {
         final Long id = 1L;
         final String username = "author";
-        final var request = new UpdatePostRequest("newTitle", "newContent");
+        final var request = new UpdatePostRequest("newTitle", "newContent", List.of());
         final String token = jwtTokenProvider.createAccessToken(username);
-        when(postService.update(id, request.title(), request.content(), username))
+        when(postService.update(id, request.title(), request.content(), username, request.imageKeys()))
                 .thenThrow(new NotFoundException("게시글 없음"));
 
         mockMvc.perform(put("/api/posts/{id}", id)
@@ -264,9 +264,9 @@ class PostControllerTest {
     void updatePostWhenNotAuthor() throws Exception {
         final Long id = 1L;
         final String username = "other";
-        final var request = new UpdatePostRequest("newTitle", "newContent");
+        final var request = new UpdatePostRequest("newTitle", "newContent", List.of());
         final String token = jwtTokenProvider.createAccessToken(username);
-        when(postService.update(id, request.title(), request.content(), username))
+        when(postService.update(id, request.title(), request.content(), username, request.imageKeys()))
                 .thenThrow(new ForbiddenException("권한 없음"));
 
         mockMvc.perform(put("/api/posts/{id}", id)
@@ -275,6 +275,33 @@ class PostControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("권한 없음"));
+    }
+
+    @Test
+    @DisplayName("이미지 포함 유효한 요청이면 게시글 수정 성공")
+    void updatePostWithImageKeys() throws Exception {
+        final Long id = 1L;
+        final String username = "author";
+        final var imageKeys = List.of("posts/a.jpg", "posts/b.png");
+        final var images = List.of(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a"),
+                new PostImageResponse("posts/b.png", "https://example.com/b")
+        );
+        final var request = new UpdatePostRequest("newTitle", "newContent", imageKeys);
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(postService.update(id, request.title(), request.content(), username, imageKeys))
+                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, images));
+
+        mockMvc.perform(put("/api/posts/{id}", id)
+                        .cookie(new Cookie("accessToken", token))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images[0].key").value("posts/a.jpg"))
+                .andExpect(jsonPath("$.images[0].url").value("https://example.com/a"))
+                .andExpect(jsonPath("$.images[1].key").value("posts/b.png"))
+                .andExpect(jsonPath("$.images[1].url").value("https://example.com/b"));
     }
 
     @Test

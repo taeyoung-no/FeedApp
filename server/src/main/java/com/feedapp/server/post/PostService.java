@@ -48,7 +48,7 @@ public class PostService {
         postRepository.delete(post);
     }
 
-    public PostResponse update(Long id, String title, String content, String username) {
+    public PostResponse update(Long id, String title, String content, String username, List<String> imageKeys) {
         validateContent(content);
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("게시글 없음"));
@@ -63,14 +63,7 @@ public class PostService {
                 post.getCreatedAt(),
                 new ArrayList<>()
         );
-        for (PostImage image : post.getImages()) {
-            updated.getImages().add(new PostImage(
-                    image.getId(),
-                    updated,
-                    image.getImageKey(),
-                    image.getPosition()
-            ));
-        }
+        addImages(updated, imageKeys);
         return toResponse(postRepository.save(updated));
     }
 

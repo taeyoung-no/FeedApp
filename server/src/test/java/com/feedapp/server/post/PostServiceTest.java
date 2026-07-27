@@ -170,7 +170,7 @@ class PostServiceTest {
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
         when(postRepository.save(any(Post.class))).thenReturn(updated);
 
-        final PostResponse result = postService.update(id, "newTitle", "newContent", author);
+        final PostResponse result = postService.update(id, "newTitle", "newContent", author, List.of());
 
         assertThat(result.getId()).isEqualTo(id);
         assertThat(result.getTitle()).isEqualTo("newTitle");
@@ -187,7 +187,7 @@ class PostServiceTest {
         final Long id = 1L;
         when(postRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "author"))
+        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "author", List.of()))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("게시글 없음");
 
@@ -201,7 +201,7 @@ class PostServiceTest {
         final var post = post(id, "title", "content", "author", LocalDateTime.of(2026, 1, 1, 10, 0), List.of());
         when(postRepository.findById(id)).thenReturn(Optional.of(post));
 
-        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "other"))
+        assertThatThrownBy(() -> postService.update(id, "newTitle", "newContent", "other", List.of()))
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessage("권한 없음");
 
@@ -209,7 +209,31 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("이미지 키가 있으면 저장하고 key·url 응답에 포함")
+    @DisplayName("이미지 포함 유효한 요청이면 수정 성공")
+    void updatePostWithImageKeys() {
+        final Long id = 1L;
+        final String author = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final var existingKeys = List.of("posts/old.jpg");
+        final var newKeys = List.of("posts/a.jpg", "posts/b.png");
+        final var post = post(id, "title", "content", author, createdAt, existingKeys);
+        final var updated = post(id, "newTitle", "newContent", author, createdAt, newKeys);
+        when(postRepository.findById(id)).thenReturn(Optional.of(post));
+        when(postRepository.save(any(Post.class))).thenReturn(updated);
+        when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
+        when(imageService.createDownloadUrl("posts/b.png")).thenReturn("https://example.com/b");
+
+        final PostResponse result = postService.update(id, "newTitle", "newContent", author, newKeys);
+
+        assertThat(result.getImages()).containsExactly(
+                new PostImageResponse("posts/a.jpg", "https://example.com/a"),
+                new PostImageResponse("posts/b.png", "https://example.com/b")
+        );
+        verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("이미지 키가 있으면 저장하고 key, url 응답에 포함")
     void createWithImageKeys() {
         final String title = "title";
         final String content = "content";
@@ -250,7 +274,7 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("상세 조회 시 이미지 key·url 포함")
+    @DisplayName("상세 조회 시 이미지 key, url 포함")
     void findByIdWithImages() {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
@@ -283,7 +307,7 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("목록 조회 시 이미지 key·url 포함")
+    @DisplayName("목록 조회 시 이미지 key, url 포함")
     void findAllWithImages() {
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(
