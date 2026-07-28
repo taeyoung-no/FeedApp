@@ -1,19 +1,28 @@
 package com.feedapp.server.auth;
 
+import java.time.Duration;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class RefreshTokenStore {
 
     private final StringRedisTemplate stringRedisTemplate;
+    private final long expirationMs;
+
+    public RefreshTokenStore(
+            StringRedisTemplate stringRedisTemplate,
+            @Value("${jwt.expiration-ms}") long expirationMs
+    ) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.expirationMs = expirationMs;
+    }
 
     public void save(String sid, String jti) {
-        stringRedisTemplate.opsForValue().set(sid, jti);
+        stringRedisTemplate.opsForValue().set(sid, jti, Duration.ofMillis(expirationMs));
     }
 
     public Optional<String> find(String sid) {

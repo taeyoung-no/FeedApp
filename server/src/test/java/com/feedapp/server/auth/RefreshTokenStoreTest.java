@@ -3,12 +3,15 @@ package com.feedapp.server.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.data.redis.test.autoconfigure.DataRedisTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -22,6 +25,8 @@ import com.redis.testcontainers.RedisContainer;
 @Testcontainers
 class RefreshTokenStoreTest {
 
+    private static final long JWT_EXPIRATION_MS = 3_600_000L;
+
     @Container
     static RedisContainer redis = new RedisContainer(DockerImageName.parse("redis:7-alpine"));
 
@@ -29,10 +34,17 @@ class RefreshTokenStoreTest {
     static void redisProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+        registry.add("jwt.expiration-ms", () -> JWT_EXPIRATION_MS);
     }
 
     @Autowired
     RefreshTokenStore refreshTokenStore;
+
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;
+
+    @Value("${jwt.expiration-ms}")
+    long jwtExpirationMs;
 
     @Test
     @DisplayName("sid-jti 저장, 조회")
@@ -76,5 +88,43 @@ class RefreshTokenStoreTest {
         refreshTokenStore.delete(sid);
 
         assertThat(refreshTokenStore.find(sid)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("저장 시 ttl 설정")
+    void saveSetsTtl() {
+        final String sid = UUID.randomUUID().toString();
+        final String jti = UUID.randomUUID().toString();
+
+        refreshTokenStore.save(sid, jti);
+
+        final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);
+        assertThat(ttlSeconds).isNotNull().isPositive();
+    }
+
+    @Test
+    @DisplayName("ttl == jwt 만료 시간")
+    void saveTtlMatchesJwtExpiration() {
+        final String sid = UUID.randomUUID().toString();
+        final String jti = UUID.randomUUID().toString();
+        final long expectedTtlSeconds = jwtExpirationMs / 1000;
+
+        refreshTokenStore.save(sid, jti);
+
+        final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);
+        assertThat(ttlSeconds).isNotNull().isBetween(expectedTtlSeconds - 5, expectedTtlSeconds);
+    }
+
+    @Test
+    @DisplayName("jti 갱신 시 ttl 재설정")
+    void updateResetsTtl() {
+        final String sid = UUID.randomUUID().toString();
+        final long expectedTtlSeconds = jwtExpirationMs / 1000;
+
+        refreshTokenStore.save(sid, UUID.randomUUID().toString());
+        refreshTokenStore.save(sid, UUID.randomUUID().toString());
+
+        final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);
+        assertThat(ttlSeconds).isNotNull().isBetween(expectedTtlSeconds - 5, expectedTtlSeconds);
     }
 }
