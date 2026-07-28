@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
@@ -31,6 +32,9 @@ class MemberServiceTest {
 
     @Mock
     RefreshTokenStore refreshTokenStore;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @Spy
     JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(
@@ -46,14 +50,19 @@ class MemberServiceTest {
     void signup() {
         final String username = "username";
         final String password = "password";
-        final var saved = new Member(1L, username, password);
-        when(memberRepository.save(any(Member.class))).thenReturn(saved);
+        final String encodedPassword = "encoded-password";
+        when(passwordEncoder.encode(password)).thenReturn(encodedPassword);
+        when(memberRepository.save(any(Member.class)))
+                .thenReturn(new Member(1L, username, encodedPassword));
 
         final MemberResponse result = memberService.signup(username, password);
+
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getUsername()).isEqualTo(username);
-
-        verify(memberRepository).save(any(Member.class));
+        verify(passwordEncoder).encode(password);
+        verify(memberRepository).save(argThat((member) ->
+                member.getUsername().equals(username) && member.getPassword().equals(encodedPassword)
+        ));
     }
 
     @Test
@@ -110,8 +119,10 @@ class MemberServiceTest {
     void login() {
         final String username = "username";
         final String password = "password";
-        final var member = new Member(1L, username, password);
+        final String encodedPassword = "encoded-password";
+        final var member = new Member(1L, username, encodedPassword);
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
+        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
 
         final LoginResult result = memberService.login(username, password);
 
@@ -120,6 +131,7 @@ class MemberServiceTest {
         assertThat(jwtTokenProvider.getType(result.getAccessToken())).isEqualTo("access");
         assertThat(jwtTokenProvider.getType(result.getRefreshToken())).isEqualTo("refresh");
         assertThat(jwtTokenProvider.getUsername(result.getRefreshToken())).isEqualTo(username);
+        verify(passwordEncoder).matches(password, encodedPassword);
 
         final String sid = jwtTokenProvider.getSid(result.getRefreshToken());
         final String jti = jwtTokenProvider.getJti(result.getRefreshToken());
@@ -205,11 +217,16 @@ class MemberServiceTest {
     @DisplayName("password가 일치하지 않으면 로그인 실패")
     void loginWithWrongPassword() {
         final String username = "username";
+        final String encodedPassword = "encoded-password";
         when(memberRepository.findByUsername(username))
-                .thenReturn(Optional.of(new Member(1L, username, "password")));
+                .thenReturn(Optional.of(new Member(1L, username, encodedPassword)));
+        when(passwordEncoder.matches("wrongpwd", encodedPassword)).thenReturn(false);
 
-        assertThatThrownBy(() -> memberService.login(username, "wrong"))
+        assertThatThrownBy(() -> memberService.login(username, "wrongpwd"))
                 .isInstanceOf(UnauthorizedException.class);
+
+        verify(passwordEncoder).matches("wrongpwd", encodedPassword);
+        verify(refreshTokenStore, never()).save(anyString(), anyString());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.feedapp.server.member;
 import com.feedapp.server.auth.JwtTokenProvider;
 import com.feedapp.server.auth.RefreshTokenStore;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,6 +13,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenStore refreshTokenStore;
+    private final PasswordEncoder passwordEncoder;
 
     public MemberResponse signup(String username, String password) {
         validateLength(username);
@@ -19,7 +21,7 @@ public class MemberService {
         if (memberRepository.existsByUsername(username)) {
             throw new ConflictException("username 중복임");
         }
-        Member saved = memberRepository.save(new Member(null, username, password));
+        Member saved = memberRepository.save(new Member(null, username, passwordEncoder.encode(password)));
         return new MemberResponse(saved.getId(), saved.getUsername());
     }
 
@@ -28,7 +30,7 @@ public class MemberService {
         validateLength(password);
         Member member = memberRepository.findByUsername(username)
                 .orElseThrow(() -> new UnauthorizedException("뭔가 잘못 입력함"));
-        if (!member.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new UnauthorizedException("뭔가 잘못 입력함");
         }
         final TokenResponse tokens = issueTokens(member.getUsername(), null);
