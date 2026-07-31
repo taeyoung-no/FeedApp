@@ -17,19 +17,22 @@ import io.jsonwebtoken.security.Keys;
 public class JwtTokenProvider {
 
     private final SecretKey key;
-    private final long expirationMs;
+    private final long accessExpirationMs;
+    private final long refreshExpirationMs;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration-ms}") long expirationMs
+            @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.expirationMs = expirationMs;
+        this.accessExpirationMs = accessExpirationMs;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
     public String createAccessToken(String username) {
         final var now = new Date();
-        final var expiry = new Date(now.getTime() + expirationMs);
+        final var expiry = new Date(now.getTime() + accessExpirationMs);
         return Jwts.builder()
                 .subject(username)
                 .id(UUID.randomUUID().toString())
@@ -46,7 +49,7 @@ public class JwtTokenProvider {
 
     public String createRefreshToken(String username, String sid) {
         final var now = new Date();
-        final var expiry = new Date(now.getTime() + expirationMs);
+        final var expiry = new Date(now.getTime() + refreshExpirationMs);
         return Jwts.builder()
                 .subject(username)
                 .id(UUID.randomUUID().toString())

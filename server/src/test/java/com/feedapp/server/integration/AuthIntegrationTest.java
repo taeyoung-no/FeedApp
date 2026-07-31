@@ -56,7 +56,8 @@ class AuthIntegrationTest {
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
 
         registry.add("jwt.secret", () -> "jwt-secret-1234567890-very-long-string");
-        registry.add("jwt.expiration-ms", () -> "3600000");
+        registry.add("jwt.access-expiration-ms", () -> "1800000");
+        registry.add("jwt.refresh-expiration-ms", () -> "86400000");
 
         registry.add("aws.s3.bucket", () -> "feedapp-photos");
         registry.add("aws.s3.region", () -> "ap-northeast-2");

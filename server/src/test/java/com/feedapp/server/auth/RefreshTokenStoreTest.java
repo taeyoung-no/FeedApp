@@ -25,7 +25,7 @@ import com.redis.testcontainers.RedisContainer;
 @Testcontainers
 class RefreshTokenStoreTest {
 
-    private static final long JWT_EXPIRATION_MS = 3_600_000L;
+    private static final long REFRESH_EXPIRATION_MS = 86_400_000L;
 
     @Container
     static RedisContainer redis = new RedisContainer(DockerImageName.parse("redis:7-alpine"));
@@ -34,7 +34,7 @@ class RefreshTokenStoreTest {
     static void redisProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
-        registry.add("jwt.expiration-ms", () -> JWT_EXPIRATION_MS);
+        registry.add("jwt.refresh-expiration-ms", () -> REFRESH_EXPIRATION_MS);
     }
 
     @Autowired
@@ -43,8 +43,8 @@ class RefreshTokenStoreTest {
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
-    @Value("${jwt.expiration-ms}")
-    long jwtExpirationMs;
+    @Value("${jwt.refresh-expiration-ms}")
+    long refreshExpirationMs;
 
     @Test
     @DisplayName("sid-jti 저장, 조회")
@@ -103,11 +103,11 @@ class RefreshTokenStoreTest {
     }
 
     @Test
-    @DisplayName("ttl == jwt 만료 시간")
-    void saveTtlMatchesJwtExpiration() {
+    @DisplayName("ttl == refresh 만료 시간")
+    void saveTtlMatchesRefreshExpiration() {
         final String sid = UUID.randomUUID().toString();
         final String jti = UUID.randomUUID().toString();
-        final long expectedTtlSeconds = jwtExpirationMs / 1000;
+        final long expectedTtlSeconds = refreshExpirationMs / 1000;
 
         refreshTokenStore.save(sid, jti);
 
@@ -119,7 +119,7 @@ class RefreshTokenStoreTest {
     @DisplayName("jti 갱신 시 ttl 재설정")
     void updateResetsTtl() {
         final String sid = UUID.randomUUID().toString();
-        final long expectedTtlSeconds = jwtExpirationMs / 1000;
+        final long expectedTtlSeconds = refreshExpirationMs / 1000;
 
         refreshTokenStore.save(sid, UUID.randomUUID().toString());
         refreshTokenStore.save(sid, UUID.randomUUID().toString());

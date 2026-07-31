@@ -12,7 +12,8 @@ class JwtTokenProviderTest {
 
     JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(
             "12345678901234567890123456789012",
-            3_600_000L
+            1_800_000L,
+            86_400_000L
     );
 
     @Test
@@ -129,7 +130,8 @@ class JwtTokenProviderTest {
     void validateWithWrongSignature() {
         final var otherProvider = new JwtTokenProvider(
                 "09876543210987654321098765432109",
-                3_600_000L
+                1_800_000L,
+                86_400_000L
         );
         final String token = otherProvider.createAccessToken("username");
 
@@ -141,6 +143,7 @@ class JwtTokenProviderTest {
     void validateWithExpiredToken() throws Exception {
         final var shortLived = new JwtTokenProvider(
                 "12345678901234567890123456789012",
+                1L,
                 1L
         );
         final String token = shortLived.createAccessToken("username");

@@ -15,7 +15,7 @@ public class RefreshTokenStore {
 
     public RefreshTokenStore(
             StringRedisTemplate stringRedisTemplate,
-            @Value("${jwt.expiration-ms}") long expirationMs
+            @Value("${jwt.refresh-expiration-ms}") long expirationMs
     ) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.expirationMs = expirationMs;

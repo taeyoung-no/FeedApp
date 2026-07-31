@@ -39,7 +39,8 @@ class MemberServiceTest {
     @Spy
     JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(
             "12345678901234567890123456789012",
-            3_600_000L
+            1_800_000L,
+            86_400_000L
     );
 
     @InjectMocks
