@@ -87,8 +87,10 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$.username").value(request.username()))
                 .andExpect(cookie().value("accessToken", "access-token"))
                 .andExpect(cookie().httpOnly("accessToken", true))
+                .andExpect(cookie().maxAge("accessToken", 1_800))
                 .andExpect(cookie().value("refreshToken", "refresh-token"))
-                .andExpect(cookie().httpOnly("refreshToken", true));
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(cookie().maxAge("refreshToken", 86_400));
     }
 
     @Test
@@ -137,8 +139,10 @@ class MemberControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(cookie().value("accessToken", "new-access-token"))
                 .andExpect(cookie().httpOnly("accessToken", true))
+                .andExpect(cookie().maxAge("accessToken", 1_800))
                 .andExpect(cookie().value("refreshToken", "new-refresh-token"))
-                .andExpect(cookie().httpOnly("refreshToken", true));
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(cookie().maxAge("refreshToken", 86_400));
     }
 
     @Test

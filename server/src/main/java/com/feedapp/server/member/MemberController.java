@@ -2,7 +2,7 @@ package com.feedapp.server.member;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -13,10 +13,21 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequiredArgsConstructor
 public class MemberController {
 
     private final MemberService memberService;
+    private final int accessTokenMaxAgeSeconds;
+    private final int refreshTokenMaxAgeSeconds;
+
+    public MemberController(
+            MemberService memberService,
+            @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
+    ) {
+        this.memberService = memberService;
+        this.accessTokenMaxAgeSeconds = toSeconds(accessExpirationMs);
+        this.refreshTokenMaxAgeSeconds = toSeconds(refreshExpirationMs);
+    }
 
     @PostMapping("/api/members/signup")
     @ResponseStatus(HttpStatus.CREATED)
@@ -64,8 +75,8 @@ public class MemberController {
     }
 
     private void addTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        response.addCookie(httpOnlyCookie("accessToken", accessToken));
-        response.addCookie(httpOnlyCookie("refreshToken", refreshToken));
+        response.addCookie(httpOnlyCookie("accessToken", accessToken, accessTokenMaxAgeSeconds));
+        response.addCookie(httpOnlyCookie("refreshToken", refreshToken, refreshTokenMaxAgeSeconds));
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
@@ -73,16 +84,19 @@ public class MemberController {
         response.addCookie(expiredCookie("refreshToken"));
     }
 
-    private Cookie httpOnlyCookie(String name, String value) {
+    private Cookie httpOnlyCookie(String name, String value, int maxAgeSeconds) {
         final Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
+        cookie.setMaxAge(maxAgeSeconds);
         return cookie;
     }
 
     private Cookie expiredCookie(String name) {
-        final Cookie cookie = httpOnlyCookie(name, "");
-        cookie.setMaxAge(0);
-        return cookie;
+        return httpOnlyCookie(name, "", 0);
+    }
+
+    private static int toSeconds(long expirationMs) {
+        return (int) (expirationMs / 1000);
     }
 }

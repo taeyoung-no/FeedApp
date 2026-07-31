@@ -93,8 +93,10 @@ class AuthIntegrationTest {
 
         assertThat(findCookie(cookies, "accessToken")).isNotNull();
         assertThat(findCookie(cookies, "accessToken").getValue()).isNotBlank();
+        assertThat(findCookie(cookies, "accessToken").getMaxAge()).isEqualTo(1_800);
         assertThat(findCookie(cookies, "refreshToken")).isNotNull();
         assertThat(findCookie(cookies, "refreshToken").getValue()).isNotBlank();
+        assertThat(findCookie(cookies, "refreshToken").getMaxAge()).isEqualTo(86_400);
 
         mockMvc.perform(get("/api/members/me").cookie(cookies))
                 .andExpect(status().isOk())
