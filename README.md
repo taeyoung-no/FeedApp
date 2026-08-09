@@ -1,6 +1,6 @@
 # Feed App
 
-TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용한다고 알려진 기술 스택을 학습하기 위한 Spring Boot, React CRUD 프로젝트입니다.
+TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용한다고 알려진 기술 스택을 학습하기 위한 Spring Boot, React CRUD 프로젝트입니다. [링크](https://feed.taeyoung-no.com)
 
 ## 목차
 1. [기능](#기능)
