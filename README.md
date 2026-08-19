@@ -30,8 +30,8 @@ TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용�
 | CI/CD | GitHub Actions |
 
 ## 개발 노트
-- [N+1 문제가 그렇게 치명적인가? 증거 있음?](https://taeyoung-no.github.io/feed%20app/2026/08/08/n+1.html)
-- [ECS: 업데이트 시 deployment 실패한 이유](https://taeyoung-no.github.io/feed%20app/2026/08/09/ecs.html)
+- [N+1 문제가 그렇게 치명적인가? 증거 있음?](https://taeyoung-no.github.io/2026/08/08/n+1.html)
+- [ECS: 업데이트 시 deployment 실패한 이유](https://taeyoung-no.github.io/2026/08/09/ecs.html)
 
 ## 로컬 실행
 ### 요구사항
