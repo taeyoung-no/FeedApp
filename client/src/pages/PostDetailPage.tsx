@@ -21,6 +21,8 @@ function PostDetailPage() {
   const [commentsError, setCommentsError] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null)
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null)
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
 
   const {
     register,
@@ -51,6 +53,8 @@ function PostDetailPage() {
         if (!cancelled) {
           setPost(data)
           setError(null)
+          setLiked(false)
+          setLikeCount(0)
         }
       } catch {
         if (!cancelled) {
@@ -161,6 +165,11 @@ function PostDetailPage() {
     }
   }
 
+  const handleToggleLike = () => {
+    setLiked((prev) => !prev)
+    setLikeCount((prev) => (liked ? Math.max(0, prev - 1) : prev + 1))
+  }
+
   const handleDeleteComment = async (commentId: number) => {
     if (deletingCommentId != null) return
 
@@ -224,6 +233,13 @@ function PostDetailPage() {
           </article>
 
           <section className="mt-10">
+            <button
+              type="button"
+              onClick={handleToggleLike}
+              className="group block text-xl cursor-pointer mb-2"
+            >
+              <span className="group-hover:underline">좋아요</span> {likeCount}
+            </button>
             <h3 className="text-xl mb-4">댓글</h3>
 
             {commentsError && <p className="text-gray-500 mb-4">{commentsError}</p>}
