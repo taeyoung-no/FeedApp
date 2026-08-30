@@ -193,7 +193,7 @@ function PostDetailPage() {
           <article>
             <h2 className="text-3xl mb-2">{post.title}</h2>
             <div className="flex items-center gap-3 text-gray-500 mb-6">
-              <p>{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+              <p>{`${post.author} | ${formatDate(post.createdAt)}`}</p>
               {user && user.username === post.author && (
                 <>
                   <Link to={`/posts/${post.id}/edit`} className="text-black cursor-pointer hover:underline">
@@ -237,7 +237,7 @@ function PostDetailPage() {
                 return (
                   <li key={comment.id}>
                     <div className="flex items-center justify-between gap-3 mb-1">
-                      <p className="text-sm text-gray-500">{`${comment.author} · ${formatDate(comment.createdAt)}`}</p>
+                      <p className="text-sm text-gray-500">{`${comment.author} | ${formatDate(comment.createdAt)}`}</p>
                       {isAuthor && !isEditing && (
                         <div className="flex items-center gap-3 shrink-0">
                           <button

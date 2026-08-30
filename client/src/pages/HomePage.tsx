@@ -45,7 +45,7 @@ function HomePage() {
           <div key={post.id} className="flex items-center">
             <Link to={`/posts/${post.id}`} className="flex-1 block cursor-pointer group">
               <h4 className="text-2xl text-blue-800 group-hover:text-black group-hover:underline">{post.title}</h4>
-              <p className="text-sm text-gray-500 mt-1">{`${post.author} · ${formatDate(post.createdAt)}`}</p>
+              <p className="text-sm text-gray-500 mt-1">{`${post.author} | ${formatDate(post.createdAt)}`}</p>
             </Link>
           </div>
         ))}
