@@ -10,6 +10,7 @@ import com.feedapp.server.member.UnauthorizedException;
 import com.feedapp.server.post.Post;
 import com.feedapp.server.post.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,7 +28,11 @@ public class PostLikeService {
         if (postLikeRepository.existsByMemberIdAndPostId(member.getId(), postId)) {
             throw new ConflictException("이미 좋아요 함");
         }
-        postLikeRepository.save(new PostLike(null, member, post, LocalDateTime.now()));
+        try {
+            postLikeRepository.save(new PostLike(null, member, post, LocalDateTime.now()));
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException("이미 좋아요 함");
+        }
     }
 
     public void unlike(Long postId, String username) {

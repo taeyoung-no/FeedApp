@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class PostLikeServiceTest {
@@ -97,6 +98,23 @@ class PostLikeServiceTest {
                 .hasMessage("이미 좋아요 함");
 
         verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("unique 위반이면 ConflictException")
+    void likeWhenUniqueConstraintViolated() {
+        final Long postId = 1L;
+        final String username = "author";
+        final Member member = member(10L, username);
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post(postId)));
+        when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
+        when(postLikeRepository.existsByMemberIdAndPostId(member.getId(), postId)).thenReturn(false);
+        when(postLikeRepository.save(any(PostLike.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> postLikeService.like(postId, username))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("이미 좋아요 함");
     }
 
     @Test
