@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.like.PostLikeRepository;
 import com.feedapp.server.storage.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,17 +19,18 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final ImageService imageService;
+    private final PostLikeRepository postLikeRepository;
 
-    public List<PostResponse> findAll() {
+    public List<PostResponse> findAll(String username) {
         return postRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(this::toResponse)
+                .map((post) -> toResponse(post, username))
                 .toList();
     }
 
-    public PostResponse findById(Long id) {
+    public PostResponse findById(Long id, String username) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("게시글 없음"));
-        return toResponse(post);
+        return toResponse(post, username);
     }
 
     public PostResponse create(String title, String content, String author, List<String> imageKeys) {
@@ -36,7 +38,7 @@ public class PostService {
         Post post = new Post(null, title, content, author, LocalDateTime.now(), new ArrayList<>());
         addImages(post, imageKeys);
         Post saved = postRepository.save(post);
-        return toResponse(saved);
+        return toResponse(saved, null);
     }
 
     public void delete(Long id, String username) {
@@ -70,7 +72,7 @@ public class PostService {
                 new ArrayList<>()
         );
         addImages(updated, imageKeys);
-        return toResponse(postRepository.save(updated));
+        return toResponse(postRepository.save(updated), username);
     }
 
     private void validateContent(String content) {
@@ -91,20 +93,24 @@ public class PostService {
         }
     }
 
-    private PostResponse toResponse(Post post) {
+    private PostResponse toResponse(Post post, String username) {
         List<PostImageResponse> images = post.getImages().stream()
                 .map((image) -> new PostImageResponse(
                         image.getImageKey(),
                         imageService.createDownloadUrl(image.getImageKey())
                 ))
                 .toList();
+        boolean liked = username != null
+                && postLikeRepository.existsByMemberUsernameAndPostId(username, post.getId());
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getContent(),
                 post.getAuthor(),
                 post.getCreatedAt(),
-                images
+                images,
+                liked,
+                postLikeRepository.countByPostId(post.getId())
         );
     }
 }

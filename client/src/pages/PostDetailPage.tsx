@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createComment, deleteComment, getComments, updateComment, type CommentResponse } from '../api/comment'
-import { deletePost, getPost, type PostResponse } from '../api/post'
+import { deletePost, getPost, likePost, unlikePost, type PostResponse } from '../api/post'
 import { createCommentSchema, type CreateCommentFormData } from '../schemas/comment'
 import { useAuthStore } from '../store/authStore'
 
@@ -23,6 +23,7 @@ function PostDetailPage() {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
+  const [isLiking, setIsLiking] = useState(false)
 
   const {
     register,
@@ -53,8 +54,8 @@ function PostDetailPage() {
         if (!cancelled) {
           setPost(data)
           setError(null)
-          setLiked(false)
-          setLikeCount(0)
+          setLiked(data.liked)
+          setLikeCount(data.likeCount)
         }
       } catch {
         if (!cancelled) {
@@ -165,9 +166,34 @@ function PostDetailPage() {
     }
   }
 
-  const handleToggleLike = () => {
-    setLiked((prev) => !prev)
-    setLikeCount((prev) => (liked ? Math.max(0, prev - 1) : prev + 1))
+  const handleToggleLike = async () => {
+    if (!id || isLiking) return
+
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setIsLiking(true)
+    try {
+      if (liked) {
+        await unlikePost(id)
+        setLiked(false)
+        setLikeCount((prev) => Math.max(0, prev - 1))
+      } else {
+        await likePost(id)
+        setLiked(true)
+        setLikeCount((prev) => prev + 1)
+      }
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message ?? '좋아요 실패')
+      } else {
+        alert('좋아요 실패')
+      }
+    } finally {
+      setIsLiking(false)
+    }
   }
 
   const handleDeleteComment = async (commentId: number) => {
@@ -236,7 +262,7 @@ function PostDetailPage() {
             <button
               type="button"
               onClick={handleToggleLike}
-              className="group block text-xl cursor-pointer mb-2"
+              className="group block text-xl cursor-pointer mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="group-hover:underline">좋아요</span> {likeCount}
             </button>

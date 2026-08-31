@@ -28,3 +28,11 @@ export async function updatePost(id: string, data: UpdatePostRequest): Promise<P
 export async function deletePost(id: string): Promise<void> {
   await apiClient.delete(`/posts/${id}`)
 }
+
+export async function likePost(id: string): Promise<void> {
+  await apiClient.post(`/posts/${id}/likes`)
+}
+
+export async function unlikePost(id: string): Promise<void> {
+  await apiClient.delete(`/posts/${id}/likes`)
+}

@@ -24,4 +24,8 @@ public class PostResponse {
     private final LocalDateTime createdAt;
     @NotNull
     private final List<PostImageResponse> images;
+    @NotNull
+    private final Boolean liked;
+    @NotNull
+    private final Long likeCount;
 }

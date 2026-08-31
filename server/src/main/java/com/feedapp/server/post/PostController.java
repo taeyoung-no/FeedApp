@@ -4,6 +4,7 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,14 +23,14 @@ public class PostController {
 
     @GetMapping("/api/posts")
     @ResponseStatus(HttpStatus.OK)
-    public List<PostResponse> findAll() {
-        return postService.findAll();
+    public List<PostResponse> findAll(Authentication authentication) {
+        return postService.findAll(usernameOf(authentication));
     }
 
     @GetMapping("/api/posts/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public PostResponse findById(@PathVariable Long id) {
-        return postService.findById(id);
+    public PostResponse findById(@PathVariable Long id, Authentication authentication) {
+        return postService.findById(id, usernameOf(authentication));
     }
 
     @PostMapping("/api/posts")
@@ -66,6 +67,13 @@ public class PostController {
                 authentication.getName(),
                 request.imageKeys()
         );
+    }
+
+    private static String usernameOf(Authentication authentication) {
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+        return authentication.getName();
     }
 }
 
