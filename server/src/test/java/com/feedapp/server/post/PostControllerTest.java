@@ -52,9 +52,9 @@ class PostControllerTest {
     void findAll() throws Exception {
         final var createdAt1 = LocalDateTime.of(2026, 1, 2, 10, 0);
         final var createdAt2 = LocalDateTime.of(2026, 1, 1, 10, 0);
-        when(postService.findAll()).thenReturn(List.of(
-                new PostResponse(1L, "title1", "content1", "author1", createdAt1, List.of()),
-                new PostResponse(2L, "title2", "content2", "author2", createdAt2, List.of())
+        when(postService.findAll(null)).thenReturn(List.of(
+                new PostResponse(1L, "title1", "content1", "author1", createdAt1, List.of(), false, 0L),
+                new PostResponse(2L, "title2", "content2", "author2", createdAt2, List.of(), false, 0L)
         ));
 
         mockMvc.perform(get("/api/posts")).andExpect(status().isOk())
@@ -68,13 +68,15 @@ class PostControllerTest {
                 .andExpect(jsonPath("$[1].title").value("title2"))
                 .andExpect(jsonPath("$[1].content").value("content2"))
                 .andExpect(jsonPath("$[1].author").value("author2"))
-                .andExpect(jsonPath("$[1].createdAt").value("2026-01-01T10:00:00"));
+                .andExpect(jsonPath("$[1].createdAt").value("2026-01-01T10:00:00"))
+                .andExpect(jsonPath("$[0].liked").value(false))
+                .andExpect(jsonPath("$[0].likeCount").value(0));
     }
 
     @Test
     @DisplayName("게시글이 없으면 빈 목록을 반환")
     void findAllWhenEmpty() throws Exception {
-        when(postService.findAll()).thenReturn(List.of());
+        when(postService.findAll(null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/posts"))
                 .andExpect(status().isOk())
@@ -86,8 +88,8 @@ class PostControllerTest {
     void findById() throws Exception {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        when(postService.findById(id)).thenReturn(
-                new PostResponse(id, "title", "content", "author", createdAt, List.of())
+        when(postService.findById(id, null)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, List.of(), false, 0L)
         );
 
         mockMvc.perform(get("/api/posts/{id}", id))
@@ -96,14 +98,34 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.title").value("title"))
                 .andExpect(jsonPath("$.content").value("content"))
                 .andExpect(jsonPath("$.author").value("author"))
-                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"));
+                .andExpect(jsonPath("$.createdAt").value("2026-01-01T10:00:00"))
+                .andExpect(jsonPath("$.liked").value(false))
+                .andExpect(jsonPath("$.likeCount").value(0));
+    }
+
+    @Test
+    @DisplayName("로그인한 상태로 상세 조회 성공")
+    void findByIdWithToken() throws Exception {
+        final Long id = 1L;
+        final String username = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        final String token = jwtTokenProvider.createAccessToken(username);
+        when(postService.findById(id, username)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, List.of(), true, 3L)
+        );
+
+        mockMvc.perform(get("/api/posts/{id}", id)
+                        .cookie(new Cookie("accessToken", token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.liked").value(true))
+                .andExpect(jsonPath("$.likeCount").value(3));
     }
 
     @Test
     @DisplayName("게시글이 없으면 상세 조회 실패")
     void findByIdWhenNotFound() throws Exception {
         final Long id = 1L;
-        when(postService.findById(id)).thenThrow(new NotFoundException("게시글 없음"));
+        when(postService.findById(id, null)).thenThrow(new NotFoundException("게시글 없음"));
 
         mockMvc.perform(get("/api/posts/{id}", id))
                 .andExpect(status().isNotFound())
@@ -118,7 +140,7 @@ class PostControllerTest {
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.create(request.title(), request.content(), username, null))
-                .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt, List.of()));
+                .thenReturn(new PostResponse(1L, request.title(), request.content(), username, createdAt, List.of(), false, 0L));
 
         mockMvc.perform(post("/api/posts")
                         .cookie(new Cookie("accessToken", token))
@@ -216,7 +238,7 @@ class PostControllerTest {
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.update(id, request.title(), request.content(), username, request.imageKeys()))
-                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, List.of()));
+                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, List.of(), false, 0L));
 
         mockMvc.perform(put("/api/posts/{id}", id)
                         .cookie(new Cookie("accessToken", token))
@@ -291,7 +313,7 @@ class PostControllerTest {
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.update(id, request.title(), request.content(), username, imageKeys))
-                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, images));
+                .thenReturn(new PostResponse(id, request.title(), request.content(), username, createdAt, images, false, 0L));
 
         mockMvc.perform(put("/api/posts/{id}", id)
                         .cookie(new Cookie("accessToken", token))
@@ -318,7 +340,7 @@ class PostControllerTest {
         final String token = jwtTokenProvider.createAccessToken(username);
         when(postService.create(request.title(), request.content(), username, imageKeys))
                 .thenReturn(new PostResponse(
-                        1L, request.title(), request.content(), username, createdAt, images
+                        1L, request.title(), request.content(), username, createdAt, images, false, 0L
                 ));
 
         mockMvc.perform(post("/api/posts")
@@ -344,8 +366,8 @@ class PostControllerTest {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         final var images = List.of(new PostImageResponse("posts/a.jpg", "https://example.com/a"));
-        when(postService.findById(id)).thenReturn(
-                new PostResponse(id, "title", "content", "author", createdAt, images)
+        when(postService.findById(id, null)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, images, false, 0L)
         );
 
         mockMvc.perform(get("/api/posts/{id}", id))
@@ -361,8 +383,8 @@ class PostControllerTest {
     void findByIdWithoutImages() throws Exception {
         final Long id = 1L;
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-        when(postService.findById(id)).thenReturn(
-                new PostResponse(id, "title", "content", "author", createdAt, List.of())
+        when(postService.findById(id, null)).thenReturn(
+                new PostResponse(id, "title", "content", "author", createdAt, List.of(), false, 0L)
         );
 
         mockMvc.perform(get("/api/posts/{id}", id))

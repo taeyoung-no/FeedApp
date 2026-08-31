@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import com.feedapp.server.common.ForbiddenException;
 import com.feedapp.server.common.NotFoundException;
+import com.feedapp.server.like.PostLikeRepository;
 import com.feedapp.server.storage.ImageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class PostServiceTest {
     @Mock
     ImageService imageService;
 
+    @Mock
+    PostLikeRepository postLikeRepository;
+
     @InjectMocks
     PostService postService;
 
@@ -44,7 +48,7 @@ class PostServiceTest {
                 post(2L, "title2", "content2", "author2", createdAt2, List.of())
         ));
 
-        final List<PostResponse> result = postService.findAll();
+        final List<PostResponse> result = postService.findAll(null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getId()).isEqualTo(1L);
@@ -64,7 +68,7 @@ class PostServiceTest {
     void findAllWhenEmpty() {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
-        final List<PostResponse> result = postService.findAll();
+        final List<PostResponse> result = postService.findAll(null);
 
         assertThat(result).isEmpty();
     }
@@ -78,13 +82,33 @@ class PostServiceTest {
                 post(id, "title", "content", "author", createdAt, List.of())
         ));
 
-        final PostResponse result = postService.findById(id);
+        final PostResponse result = postService.findById(id, null);
 
         assertThat(result.getId()).isEqualTo(id);
         assertThat(result.getTitle()).isEqualTo("title");
         assertThat(result.getContent()).isEqualTo("content");
         assertThat(result.getAuthor()).isEqualTo("author");
         assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(result.getLiked()).isFalse();
+        assertThat(result.getLikeCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("상세 조회 시 좋아요 수와 내 좋아요 여부 포함")
+    void findByIdWithLikes() {
+        final Long id = 1L;
+        final String username = "author";
+        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
+        when(postRepository.findById(id)).thenReturn(Optional.of(
+                post(id, "title", "content", "author", createdAt, List.of())
+        ));
+        when(postLikeRepository.countByPostId(id)).thenReturn(3L);
+        when(postLikeRepository.existsByMemberUsernameAndPostId(username, id)).thenReturn(true);
+
+        final PostResponse result = postService.findById(id, username);
+
+        assertThat(result.getLiked()).isTrue();
+        assertThat(result.getLikeCount()).isEqualTo(3L);
     }
 
     @Test
@@ -93,7 +117,7 @@ class PostServiceTest {
         final Long id = 1L;
         when(postRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.findById(id))
+        assertThatThrownBy(() -> postService.findById(id, null))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("게시글 없음");
     }
@@ -306,7 +330,7 @@ class PostServiceTest {
         ));
         when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
 
-        final PostResponse result = postService.findById(id);
+        final PostResponse result = postService.findById(id, null);
 
         assertThat(result.getId()).isEqualTo(id);
         assertThat(result.getImages()).containsExactly(
@@ -323,7 +347,7 @@ class PostServiceTest {
                 post(id, "title", "content", "author", createdAt, List.of())
         ));
 
-        final PostResponse result = postService.findById(id);
+        final PostResponse result = postService.findById(id, null);
 
         assertThat(result.getImages()).isEmpty();
     }
@@ -337,7 +361,7 @@ class PostServiceTest {
         ));
         when(imageService.createDownloadUrl("posts/a.jpg")).thenReturn("https://example.com/a");
 
-        final List<PostResponse> result = postService.findAll();
+        final List<PostResponse> result = postService.findAll(null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getImages()).containsExactly(
