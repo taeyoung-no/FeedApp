@@ -33,16 +33,19 @@ public class PostLikeService {
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("이미 좋아요 함");
         }
+        post.increaseLikeCount();
+        postRepository.save(post);
     }
 
     public void unlike(Long postId, String username) {
-        if (!postRepository.existsById(postId)) {
-            throw new NotFoundException("게시글 없음");
-        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("게시글 없음"));
         Member member = findMember(username);
         PostLike like = postLikeRepository.findByMemberIdAndPostId(member.getId(), postId)
                 .orElseThrow(() -> new NotFoundException("좋아요 없음"));
         postLikeRepository.delete(like);
+        post.decreaseLikeCount();
+        postRepository.save(post);
     }
 
     private Member findMember(String username) {

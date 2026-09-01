@@ -100,9 +100,8 @@ class PostServiceTest {
         final String username = "author";
         final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         when(postRepository.findById(id)).thenReturn(Optional.of(
-                post(id, "title", "content", "author", createdAt, List.of())
+                new Post(id, "title", "content", "author", createdAt, new ArrayList<>(), 3)
         ));
-        when(postLikeRepository.countByPostId(id)).thenReturn(3L);
         when(postLikeRepository.existsByMemberUsernameAndPostId(username, id)).thenReturn(true);
 
         final PostResponse result = postService.findById(id, username);

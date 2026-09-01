@@ -69,7 +69,8 @@ public class PostService {
                 content,
                 post.getAuthor(),
                 post.getCreatedAt(),
-                new ArrayList<>()
+                new ArrayList<>(),
+                post.getLikeCount()
         );
         addImages(updated, imageKeys);
         return toResponse(postRepository.save(updated), username);
@@ -110,7 +111,7 @@ public class PostService {
                 post.getCreatedAt(),
                 images,
                 liked,
-                postLikeRepository.countByPostId(post.getId())
+                post.getLikeCount()
         );
     }
 }

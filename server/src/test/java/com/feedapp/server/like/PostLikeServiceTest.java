@@ -1,5 +1,6 @@
 package com.feedapp.server.like;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -53,7 +54,9 @@ class PostLikeServiceTest {
 
         postLikeService.like(postId, username);
 
+        assertThat(post.getLikeCount()).isEqualTo(1L);
         verify(postLikeRepository).save(any(PostLike.class));
+        verify(postRepository).save(post);
     }
 
     @Test
@@ -98,6 +101,7 @@ class PostLikeServiceTest {
                 .hasMessage("이미 좋아요 함");
 
         verify(postLikeRepository, never()).save(any(PostLike.class));
+        verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
@@ -115,6 +119,8 @@ class PostLikeServiceTest {
         assertThatThrownBy(() -> postLikeService.like(postId, username))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 좋아요 함");
+
+        verify(postRepository, never()).save(any(Post.class));
     }
 
     @Test
@@ -123,21 +129,25 @@ class PostLikeServiceTest {
         final Long postId = 1L;
         final String username = "author";
         final Member member = member(10L, username);
-        final PostLike like = new PostLike(1L, member, post(postId), LocalDateTime.of(2026, 1, 1, 10, 0));
-        when(postRepository.existsById(postId)).thenReturn(true);
+        final Post post = post(postId);
+        post.increaseLikeCount();
+        final PostLike like = new PostLike(1L, member, post, LocalDateTime.of(2026, 1, 1, 10, 0));
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
         when(postLikeRepository.findByMemberIdAndPostId(member.getId(), postId)).thenReturn(Optional.of(like));
 
         postLikeService.unlike(postId, username);
 
+        assertThat(post.getLikeCount()).isZero();
         verify(postLikeRepository).delete(like);
+        verify(postRepository).save(post);
     }
 
     @Test
     @DisplayName("게시글이 없으면 좋아요 취소 실패")
     void unlikeWhenPostNotFound() {
         final Long postId = 1L;
-        when(postRepository.existsById(postId)).thenReturn(false);
+        when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postLikeService.unlike(postId, "author"))
                 .isInstanceOf(NotFoundException.class)
@@ -152,7 +162,7 @@ class PostLikeServiceTest {
         final Long postId = 1L;
         final String username = "author";
         final Member member = member(10L, username);
-        when(postRepository.existsById(postId)).thenReturn(true);
+        when(postRepository.findById(postId)).thenReturn(Optional.of(post(postId)));
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
         when(postLikeRepository.findByMemberIdAndPostId(member.getId(), postId)).thenReturn(Optional.empty());
 
