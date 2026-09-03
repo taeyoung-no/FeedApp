@@ -72,3 +72,11 @@ docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1
 
 k6 run loadtest/feed-list.js
 ```
+
+### 동시성 테스트
+```bash
+# 시드 데이터
+docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1234 feedapp < server/loadtest-seed-race.sql
+
+k6 run loadtest/like-race.js
+```
