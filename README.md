@@ -53,10 +53,12 @@ docker compose -f server/docker-compose.yml up -d
 
 ### 개발 서버
 ```bash
-# 터미널 1
+# 백엔드
 ./server/gradlew -p server bootRun
+```
 
-# 터미널 2
+```bash
+# 프론트엔드
 npm run dev --prefix client
 ```
 
