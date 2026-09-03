@@ -1,6 +1,5 @@
 package com.feedapp.server.like;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -54,9 +53,8 @@ class PostLikeServiceTest {
 
         postLikeService.like(postId, username);
 
-        assertThat(post.getLikeCount()).isEqualTo(1L);
         verify(postLikeRepository).save(any(PostLike.class));
-        verify(postRepository).save(post);
+        verify(postRepository).incrementLikeCount(postId);
     }
 
     @Test
@@ -101,7 +99,7 @@ class PostLikeServiceTest {
                 .hasMessage("이미 좋아요 함");
 
         verify(postLikeRepository, never()).save(any(PostLike.class));
-        verify(postRepository, never()).save(any(Post.class));
+        verify(postRepository, never()).incrementLikeCount(postId);
     }
 
     @Test
@@ -120,7 +118,7 @@ class PostLikeServiceTest {
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 좋아요 함");
 
-        verify(postRepository, never()).save(any(Post.class));
+        verify(postRepository, never()).incrementLikeCount(postId);
     }
 
     @Test
@@ -130,7 +128,6 @@ class PostLikeServiceTest {
         final String username = "author";
         final Member member = member(10L, username);
         final Post post = post(postId);
-        post.increaseLikeCount();
         final PostLike like = new PostLike(1L, member, post, LocalDateTime.of(2026, 1, 1, 10, 0));
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findByUsername(username)).thenReturn(Optional.of(member));
@@ -138,9 +135,8 @@ class PostLikeServiceTest {
 
         postLikeService.unlike(postId, username);
 
-        assertThat(post.getLikeCount()).isZero();
         verify(postLikeRepository).delete(like);
-        verify(postRepository).save(post);
+        verify(postRepository).decrementLikeCount(postId);
     }
 
     @Test

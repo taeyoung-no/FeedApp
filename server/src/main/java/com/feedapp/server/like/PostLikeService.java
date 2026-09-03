@@ -33,8 +33,7 @@ public class PostLikeService {
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("이미 좋아요 함");
         }
-        post.increaseLikeCount();
-        postRepository.save(post);
+        postRepository.incrementLikeCount(postId);
     }
 
     public void unlike(Long postId, String username) {
@@ -44,8 +43,7 @@ public class PostLikeService {
         PostLike like = postLikeRepository.findByMemberIdAndPostId(member.getId(), postId)
                 .orElseThrow(() -> new NotFoundException("좋아요 없음"));
         postLikeRepository.delete(like);
-        post.decreaseLikeCount();
-        postRepository.save(post);
+        postRepository.decrementLikeCount(postId);
     }
 
     private Member findMember(String username) {

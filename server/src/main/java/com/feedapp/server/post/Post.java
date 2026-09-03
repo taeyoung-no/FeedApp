@@ -64,12 +64,4 @@ public class Post {
         this.images = images;
         this.likeCount = likeCount;
     }
-
-    public void increaseLikeCount() {
-        this.likeCount++;
-    }
-
-    public void decreaseLikeCount() {
-        this.likeCount--;
-    }
 }
