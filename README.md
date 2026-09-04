@@ -30,6 +30,7 @@ TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용�
 | CI/CD | GitHub Actions |
 
 ## 개발 노트
+- [JWT 안전하게 사용하기](https://taeyoung-no.github.io/2026/09/04/jwt.html)
 - [N+1 문제가 그렇게 치명적인가? 증거 있음?](https://taeyoung-no.github.io/2026/08/08/n+1.html)
 - [좋아요 기능 성능 개선 및 동시성 문제 해결](https://taeyoung-no.github.io/2026/09/03/race-condition.html)
 - [ECS: 업데이트 시 deployment 실패한 이유](https://taeyoung-no.github.io/2026/08/09/ecs.html)
