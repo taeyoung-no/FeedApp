@@ -42,11 +42,14 @@ function HomePage() {
 
       <div className="max-w-2xl mx-auto space-y-5 mb-5">
         {posts.map((post) => (
-          <div key={post.id} className="flex items-center">
-            <Link to={`/posts/${post.id}`} className="flex-1 block cursor-pointer group">
+          <div key={post.id} className="flex items-center gap-4">
+            <Link to={`/posts/${post.id}`} className="flex-1 min-w-0 block cursor-pointer group">
               <h4 className="text-2xl text-blue-800 group-hover:text-black group-hover:underline">{post.title}</h4>
               <p className="text-sm text-gray-500 mt-1">{`${post.author} | ${formatDate(post.createdAt)}`}</p>
             </Link>
+            <p className="shrink-0 text-lg text-black" aria-label={`좋아요 ${post.likeCount}개`}>
+              좋아요 {post.likeCount}
+            </p>
           </div>
         ))}
       </div>
