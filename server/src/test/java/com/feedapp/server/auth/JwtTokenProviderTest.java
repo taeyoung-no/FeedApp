@@ -17,106 +17,38 @@ class JwtTokenProviderTest {
     );
 
     @Test
-    @DisplayName("유효한 엑세스 토큰이면 검증 성공")
-    void validate() {
+    @DisplayName("액세스 토큰에 username, type, jti 포함")
+    void accessTokenContainsClaims() {
         final String token = jwtTokenProvider.createAccessToken("username");
 
         assertThat(jwtTokenProvider.validate(token)).isTrue();
-    }
-
-    @Test
-    @DisplayName("유효한 엑세스 토큰이면 username 정상 반환")
-    void getUsername() {
-        final String token = jwtTokenProvider.createAccessToken("username");
-
         assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("username");
-    }
-
-    @Test
-    @DisplayName("유효한 엑세스 토큰이면 type(access) 정상 반환")
-    void getType() {
-        final String token = jwtTokenProvider.createAccessToken("username");
-
         assertThat(jwtTokenProvider.getType(token)).isEqualTo("access");
+        assertThatCode(() -> UUID.fromString(jwtTokenProvider.getJti(token))).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("유효한 엑세스 토큰이면 uuid 형식인 jti 정상 반환")
-    void getJti() {
-        final String token = jwtTokenProvider.createAccessToken("username");
-
-        final String jti = jwtTokenProvider.getJti(token);
-
-        assertThat(jti).isNotBlank();
-        assertThatCode(() -> UUID.fromString(jti)).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("엑세스 토큰 발급할 때마다 jti 다름")
-    void jtiIsUnique() {
-        final String token1 = jwtTokenProvider.createAccessToken("username");
-        final String token2 = jwtTokenProvider.createAccessToken("username");
-
-        assertThat(jwtTokenProvider.getJti(token1))
-                .isNotEqualTo(jwtTokenProvider.getJti(token2));
-    }
-
-    @Test
-    @DisplayName("유효한 리프레시 토큰이면 type(refresh) 정상 반환")
-    void getRefreshTokenType() {
-        final String token = jwtTokenProvider.createRefreshToken("username");
-
-        assertThat(jwtTokenProvider.getType(token)).isEqualTo("refresh");
-    }
-
-    @Test
-    @DisplayName("유효한 리프레시 토큰이면 username 정상 반환")
-    void getRefreshTokenUserType() {
+    @DisplayName("리프레시 토큰에 username, type, jti, sid 포함")
+    void refreshTokenContainsClaims() {
         final String token = jwtTokenProvider.createRefreshToken("username");
 
         assertThat(jwtTokenProvider.getUsername(token)).isEqualTo("username");
+        assertThat(jwtTokenProvider.getType(token)).isEqualTo("refresh");
+        assertThatCode(() -> UUID.fromString(jwtTokenProvider.getJti(token))).doesNotThrowAnyException();
+        assertThatCode(() -> UUID.fromString(jwtTokenProvider.getSid(token))).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("유효한 리프레시 토큰이면 uuid 형식인 jti 정상 반환")
-    void createRefreshToken_hasJtiAsUuid() {
-        final String token = jwtTokenProvider.createRefreshToken("username");
+    @DisplayName("발급할 때마다 jti, sid가 다름")
+    void issuedTokensHaveUniqueIds() {
+        final String access1 = jwtTokenProvider.createAccessToken("username");
+        final String access2 = jwtTokenProvider.createAccessToken("username");
+        final String refresh1 = jwtTokenProvider.createRefreshToken("username");
+        final String refresh2 = jwtTokenProvider.createRefreshToken("username");
 
-        final String jti = jwtTokenProvider.getJti(token);
-
-        assertThat(jti).isNotBlank();
-        assertThatCode(() -> UUID.fromString(jti)).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("유효한 리프레시 토큰이면 uuid 형식인 sid 정상 반환")
-    void createRefreshToken_hasSidAsUuid() {
-        final String token = jwtTokenProvider.createRefreshToken("username");
-
-        final String sid = jwtTokenProvider.getSid(token);
-
-        assertThat(sid).isNotBlank();
-        assertThatCode(() -> UUID.fromString(sid)).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("리프레시 토큰 발급할 때마다 jti 다름")
-    void createRefreshToken_jtiIsUnique() {
-        final String token1 = jwtTokenProvider.createRefreshToken("username");
-        final String token2 = jwtTokenProvider.createRefreshToken("username");
-
-        assertThat(jwtTokenProvider.getJti(token1))
-                .isNotEqualTo(jwtTokenProvider.getJti(token2));
-    }
-
-    @Test
-    @DisplayName("리프레시 토큰 발급할 때마다 sid 다름")
-    void createRefreshToken_sidIsUnique() {
-        final String token1 = jwtTokenProvider.createRefreshToken("username");
-        final String token2 = jwtTokenProvider.createRefreshToken("username");
-
-        assertThat(jwtTokenProvider.getSid(token1))
-                .isNotEqualTo(jwtTokenProvider.getSid(token2));
+        assertThat(jwtTokenProvider.getJti(access1)).isNotEqualTo(jwtTokenProvider.getJti(access2));
+        assertThat(jwtTokenProvider.getJti(refresh1)).isNotEqualTo(jwtTokenProvider.getJti(refresh2));
+        assertThat(jwtTokenProvider.getSid(refresh1)).isNotEqualTo(jwtTokenProvider.getSid(refresh2));
     }
 
     @Test
@@ -133,9 +65,8 @@ class JwtTokenProviderTest {
                 1_800_000L,
                 86_400_000L
         );
-        final String token = otherProvider.createAccessToken("username");
 
-        assertThat(jwtTokenProvider.validate(token)).isFalse();
+        assertThat(jwtTokenProvider.validate(otherProvider.createAccessToken("username"))).isFalse();
     }
 
     @Test

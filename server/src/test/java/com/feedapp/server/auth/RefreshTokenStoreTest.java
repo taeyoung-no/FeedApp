@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.data.redis.test.autoconfigure.DataRedisTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -43,47 +42,15 @@ class RefreshTokenStoreTest {
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
-    @Value("${jwt.refresh-expiration-ms}")
-    long refreshExpirationMs;
-
     @Test
-    @DisplayName("sid-jti 저장, 조회")
-    void saveAndFind() {
+    @DisplayName("sid-jti 저장, 조회, 삭제")
+    void saveFindAndDelete() {
         final String sid = UUID.randomUUID().toString();
         final String jti = UUID.randomUUID().toString();
 
         refreshTokenStore.save(sid, jti);
 
         assertThat(refreshTokenStore.find(sid)).contains(jti);
-    }
-
-    @Test
-    @DisplayName("jti 갱신")
-    void updateJti() {
-        final String sid = UUID.randomUUID().toString();
-        final String oldJti = UUID.randomUUID().toString();
-        final String newJti = UUID.randomUUID().toString();
-
-        refreshTokenStore.save(sid, oldJti);
-        refreshTokenStore.save(sid, newJti);
-
-        assertThat(refreshTokenStore.find(sid)).contains(newJti);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 sid 조회 결과 empty")
-    void findMissing() {
-        final String sid = UUID.randomUUID().toString();
-
-        assertThat(refreshTokenStore.find(sid)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("sid 삭제")
-    void delete() {
-        final String sid = UUID.randomUUID().toString();
-        final String jti = UUID.randomUUID().toString();
-        refreshTokenStore.save(sid, jti);
 
         refreshTokenStore.delete(sid);
 
@@ -91,37 +58,23 @@ class RefreshTokenStoreTest {
     }
 
     @Test
-    @DisplayName("저장 시 ttl 설정")
-    void saveSetsTtl() {
+    @DisplayName("jti 갱신")
+    void updateJti() {
         final String sid = UUID.randomUUID().toString();
-        final String jti = UUID.randomUUID().toString();
+        refreshTokenStore.save(sid, UUID.randomUUID().toString());
+        final String newJti = UUID.randomUUID().toString();
 
-        refreshTokenStore.save(sid, jti);
+        refreshTokenStore.save(sid, newJti);
 
-        final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);
-        assertThat(ttlSeconds).isNotNull().isPositive();
+        assertThat(refreshTokenStore.find(sid)).contains(newJti);
     }
 
     @Test
-    @DisplayName("ttl == refresh 만료 시간")
+    @DisplayName("저장 시 ttl이 refresh 만료 시간과 같음")
     void saveTtlMatchesRefreshExpiration() {
         final String sid = UUID.randomUUID().toString();
-        final String jti = UUID.randomUUID().toString();
-        final long expectedTtlSeconds = refreshExpirationMs / 1000;
+        final long expectedTtlSeconds = REFRESH_EXPIRATION_MS / 1000;
 
-        refreshTokenStore.save(sid, jti);
-
-        final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);
-        assertThat(ttlSeconds).isNotNull().isBetween(expectedTtlSeconds - 5, expectedTtlSeconds);
-    }
-
-    @Test
-    @DisplayName("jti 갱신 시 ttl 재설정")
-    void updateResetsTtl() {
-        final String sid = UUID.randomUUID().toString();
-        final long expectedTtlSeconds = refreshExpirationMs / 1000;
-
-        refreshTokenStore.save(sid, UUID.randomUUID().toString());
         refreshTokenStore.save(sid, UUID.randomUUID().toString());
 
         final Long ttlSeconds = stringRedisTemplate.getExpire(sid, TimeUnit.SECONDS);

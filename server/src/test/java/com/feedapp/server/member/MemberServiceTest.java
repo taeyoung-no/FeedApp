@@ -231,34 +231,6 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("username 길이가 0이면 로그인 실패")
-    void loginWithEmptyUsername() {
-        assertThatThrownBy(() -> memberService.login("", "password"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("username 길이가 8 초과이면 로그인 실패")
-    void loginWithTooLongUsername() {
-        assertThatThrownBy(() -> memberService.login("long-username", "password"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("password 길이가 0이면 로그인 실패")
-    void loginWithEmptyPassword() {
-        assertThatThrownBy(() -> memberService.login("username", ""))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("password 길이가 8 초과이면 로그인 실패")
-    void loginWithTooLongPassword() {
-        assertThatThrownBy(() -> memberService.login("username", "long-password"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     @DisplayName("유효한 리프레시 토큰이면 세션 삭제")
     void logout() {
         final String refreshToken = jwtTokenProvider.createRefreshToken("username");

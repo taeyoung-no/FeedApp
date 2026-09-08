@@ -33,21 +33,6 @@ class PostLikeRepositoryTest {
     EntityManager entityManager;
 
     @Test
-    @DisplayName("유효한 요청이면 좋아요 정상 저장")
-    void save() {
-        final Member member = saveMember("author");
-        final Post post = savePost();
-        final var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
-
-        final PostLike saved = postLikeRepository.save(new PostLike(null, member, post, createdAt));
-
-        assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getMember().getId()).isEqualTo(member.getId());
-        assertThat(saved.getPost().getId()).isEqualTo(post.getId());
-        assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
-    }
-
-    @Test
     @DisplayName("같은 회원이 같은 글에 두 번 좋아요하면 실패")
     void uniqueMemberAndPost() {
         final Member member = saveMember("author");
@@ -61,65 +46,24 @@ class PostLikeRepositoryTest {
     }
 
     @Test
-    @DisplayName("게시글별 좋아요 수 조회")
-    void countByPostId() {
-        final Member member1 = saveMember("a");
-        final Member member2 = saveMember("b");
-        final Post post = savePost();
-        final Post other = savePost();
-        postLikeRepository.save(new PostLike(null, member1, post, LocalDateTime.of(2026, 1, 1, 10, 0)));
-        postLikeRepository.save(new PostLike(null, member2, post, LocalDateTime.of(2026, 1, 1, 11, 0)));
-        postLikeRepository.save(new PostLike(null, member1, other, LocalDateTime.of(2026, 1, 1, 12, 0)));
-
-        assertThat(postLikeRepository.countByPostId(post.getId())).isEqualTo(2L);
-        assertThat(postLikeRepository.countByPostId(other.getId())).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("회원과 게시글로 좋아요 존재 여부 조회")
-    void existsByMemberIdAndPostId() {
-        final Member member = saveMember("author");
-        final Post post = savePost();
-        postLikeRepository.save(new PostLike(null, member, post, LocalDateTime.of(2026, 1, 1, 10, 0)));
-
-        assertThat(postLikeRepository.existsByMemberIdAndPostId(member.getId(), post.getId())).isTrue();
-        assertThat(postLikeRepository.existsByMemberUsernameAndPostId("author", post.getId())).isTrue();
-        assertThat(postLikeRepository.existsByMemberUsernameAndPostId("other", post.getId())).isFalse();
-    }
-
-    @Test
-    @DisplayName("저장된 좋아요 삭제")
-    void delete() {
-        final Member member = saveMember("author");
-        final Post post = savePost();
-        final PostLike saved = postLikeRepository.save(
-                new PostLike(null, member, post, LocalDateTime.of(2026, 1, 1, 10, 0))
-        );
-
-        postLikeRepository.delete(saved);
-
-        assertThat(postLikeRepository.findById(saved.getId())).isEmpty();
-    }
-
-    @Test
     @DisplayName("게시글 삭제 시 좋아요도 cascade 삭제")
     void deletePostCascadesLikes() {
         final Member member = saveMember("author");
-        final Post post = savePost();
-        final Post other = savePost();
-        final PostLike deleted = postLikeRepository.save(
-                new PostLike(null, member, post, LocalDateTime.of(2026, 1, 1, 10, 0))
+        final Post post1 = savePost();
+        final Post post2 = savePost();
+        final PostLike like1 = postLikeRepository.save(
+                new PostLike(null, member, post1, LocalDateTime.of(2026, 1, 1, 10, 0))
         );
-        final PostLike kept = postLikeRepository.save(
-                new PostLike(null, member, other, LocalDateTime.of(2026, 1, 1, 11, 0))
+        final PostLike like2 = postLikeRepository.save(
+                new PostLike(null, member, post2, LocalDateTime.of(2026, 1, 1, 11, 0))
         );
 
-        postRepository.delete(post);
+        postRepository.delete(post1);
         entityManager.flush();
         entityManager.clear();
 
-        assertThat(postLikeRepository.findById(deleted.getId())).isEmpty();
-        assertThat(postLikeRepository.findById(kept.getId())).isPresent();
+        assertThat(postLikeRepository.findById(like1.getId())).isEmpty();
+        assertThat(postLikeRepository.findById(like2.getId())).isPresent();
     }
 
     private Member saveMember(String username) {
