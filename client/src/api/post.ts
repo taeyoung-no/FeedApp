@@ -4,9 +4,10 @@ import type { components } from './generated/schema'
 export type PostResponse = components['schemas']['PostResponse']
 export type CreatePostRequest = components['schemas']['CreatePostRequest']
 export type UpdatePostRequest = components['schemas']['UpdatePostRequest']
+export type PagedPosts = components['schemas']['PagedModelPostResponse']
 
-export async function getPosts(): Promise<PostResponse[]> {
-  const response = await apiClient.get<PostResponse[]>('/posts')
+export async function getPosts(page = 0): Promise<PagedPosts> {
+  const response = await apiClient.get<PagedPosts>('/posts', { params: { page } })
   return response.data
 }
 

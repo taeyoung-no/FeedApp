@@ -25,7 +25,7 @@ export function setup() {
   if (list.status !== 200) {
     throw new Error(`GET /api/posts failed: ${list.status}`);
   }
-  const post = list.json().find((p) => p.title === 'like-race');
+  const post = list.json().content.find((p) => p.title === 'like-race');
   if (!post) {
     throw new Error('제목이 "like-race"인 글이 없음');
   }

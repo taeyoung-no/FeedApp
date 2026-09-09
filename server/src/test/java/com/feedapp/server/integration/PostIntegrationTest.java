@@ -132,8 +132,10 @@ class PostIntegrationTest {
 
         mockMvc.perform(get("/api/posts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(greaterThanOrEqualTo(2)))
-                .andExpect(jsonPath("$[*].title", hasItems(title1, title2)));
+                .andExpect(jsonPath("$.content.length()").value(greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.content[*].title", hasItems(title1, title2)))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(20));
     }
 
     @Test

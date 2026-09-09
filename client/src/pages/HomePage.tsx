@@ -4,6 +4,8 @@ import { getPosts, type PostResponse } from '../api/post'
 
 function HomePage() {
   const [posts, setPosts] = useState<PostResponse[]>([])
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -11,10 +13,12 @@ function HomePage() {
     let cancelled = false
 
     const load = async () => {
+      setIsLoading(true)
       try {
-        const data = await getPosts()
+        const data = await getPosts(page)
         if (!cancelled) {
-          setPosts(data)
+          setPosts(data.content ?? [])
+          setTotalPages(data.page?.totalPages ?? 0)
           setError(null)
         }
       } catch {
@@ -32,7 +36,7 @@ function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [page])
 
   return (
     <main>
@@ -53,6 +57,27 @@ function HomePage() {
           </div>
         ))}
       </div>
+
+      {!isLoading && !error && totalPages > 0 && (
+        <div className="max-w-2xl mx-auto flex justify-center items-center gap-4 mb-5">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => current - 1)}
+            className="cursor-pointer hover:underline disabled:opacity-40 disabled:pointer-events-none"
+          >
+            이전
+          </button>
+          <button
+            type="button"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((current) => current + 1)}
+            className="cursor-pointer hover:underline disabled:opacity-40 disabled:pointer-events-none"
+          >
+            다음
+          </button>
+        </div>
+      )}
     </main>
   )
 }

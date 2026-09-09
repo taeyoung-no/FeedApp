@@ -9,6 +9,8 @@ import com.feedapp.server.common.NotFoundException;
 import com.feedapp.server.like.PostLikeRepository;
 import com.feedapp.server.storage.ImageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,10 +23,9 @@ public class PostService {
     private final ImageService imageService;
     private final PostLikeRepository postLikeRepository;
 
-    public List<PostResponse> findAll(String username) {
-        return postRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map((post) -> toResponse(post, username))
-                .toList();
+    public Page<PostResponse> findAll(String username, Pageable pageable) {
+        return postRepository.findAllWithImages(pageable)
+                .map((post) -> toResponse(post, username));
     }
 
     public PostResponse findById(Long id, String username) {
