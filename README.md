@@ -71,16 +71,24 @@ npm run dev --prefix client
 
 ### 부하 테스트
 ```bash
-# 시드 데이터
-docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1234 feedapp < server/loadtest-seed.sql
-
-k6 run loadtest/feed-list.js
+# N+1 데이터
+docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1234 feedapp < server/loadtest-seed-nplus1.sql
+```
+``` bash
+# 페이지네이션 데이터
+docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1234 feedapp < server/loadtest-seed-pagination.sql
+```
+```bash
+# 테스트
+k6 run -e PAGE=<페이지> loadtest/feed-list.js
 ```
 
 ### 동시성 테스트
 ```bash
-# 시드 데이터
+# 데이터
 docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1234 feedapp < server/loadtest-seed-race.sql
-
+```
+```bash
+# 테스트
 k6 run loadtest/like-race.js
 ```
