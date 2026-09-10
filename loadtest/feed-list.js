@@ -4,6 +4,7 @@ import { Rate, Trend } from 'k6/metrics';
 
 const errorRate = new Rate('feed_list_errors');
 const feedListDuration = new Trend('feed_list_duration', true);
+const page = __ENV.PAGE ?? '0';
 
 export const options = {
   scenarios: {
@@ -16,8 +17,8 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get('http://localhost:8080/api/posts', {
-    tags: { name: 'GET /api/posts' },
+  const res = http.get(`http://localhost:8080/api/posts?page=${page}`, {
+    tags: { name: `GET /api/posts?page=${page}` },
   });
 
   feedListDuration.add(res.timings.duration);
