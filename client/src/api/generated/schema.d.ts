@@ -303,26 +303,12 @@ export interface components {
             key: string;
             uploadUrl: string;
         };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
-        };
-        PageMetadata: {
-            /** Format: int64 */
-            size?: number;
-            /** Format: int64 */
-            number?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int64 */
-            totalPages?: number;
-        };
-        PagedModelPostResponse: {
+        CursorPagePostResponse: {
             content?: components["schemas"]["PostResponse"][];
-            page?: components["schemas"]["PageMetadata"];
+            nextCursor?: string;
+            prevCursor?: string;
+            hasNext?: boolean;
+            hasPrevious?: boolean;
         };
         PresignedDownload: {
             url: string;
@@ -677,8 +663,8 @@ export interface operations {
     };
     findAll: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                cursor?: string;
             };
             header?: never;
             path?: never;
@@ -692,7 +678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PagedModelPostResponse"];
+                    "*/*": components["schemas"]["CursorPagePostResponse"];
                 };
             };
             /** @description Bad Request */

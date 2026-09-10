@@ -4,8 +4,11 @@ import { getPosts, type PostResponse } from '../api/post'
 
 function HomePage() {
   const [posts, setPosts] = useState<PostResponse[]>([])
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [prevCursor, setPrevCursor] = useState<string | null>(null)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -15,10 +18,13 @@ function HomePage() {
     const load = async () => {
       setIsLoading(true)
       try {
-        const data = await getPosts(page)
+        const data = await getPosts(cursor)
         if (!cancelled) {
           setPosts(data.content ?? [])
-          setTotalPages(data.page?.totalPages ?? 0)
+          setNextCursor(data.nextCursor ?? null)
+          setPrevCursor(data.prevCursor ?? null)
+          setHasNext(data.hasNext ?? false)
+          setHasPrevious(data.hasPrevious ?? false)
           setError(null)
         }
       } catch {
@@ -36,7 +42,7 @@ function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [page])
+  }, [cursor])
 
   return (
     <main>
@@ -58,20 +64,20 @@ function HomePage() {
         ))}
       </div>
 
-      {!isLoading && !error && totalPages > 0 && (
+      {!isLoading && !error && posts.length > 0 && (
         <div className="max-w-2xl mx-auto flex justify-center items-center gap-4 mb-5">
           <button
             type="button"
-            disabled={page === 0}
-            onClick={() => setPage((current) => current - 1)}
+            disabled={!hasPrevious}
+            onClick={() => setCursor(prevCursor)}
             className="cursor-pointer hover:underline disabled:opacity-40 disabled:pointer-events-none"
           >
             이전
           </button>
           <button
             type="button"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
+            disabled={!hasNext}
+            onClick={() => setCursor(nextCursor)}
             className="cursor-pointer hover:underline disabled:opacity-40 disabled:pointer-events-none"
           >
             다음

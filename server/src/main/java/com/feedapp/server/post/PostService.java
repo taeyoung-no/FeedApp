@@ -9,8 +9,6 @@ import com.feedapp.server.common.NotFoundException;
 import com.feedapp.server.like.PostLikeRepository;
 import com.feedapp.server.storage.ImageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,14 +16,28 @@ import org.springframework.stereotype.Service;
 public class PostService {
 
     private static final int CONTENT_MAX_LENGTH = 500;
+    private static final int PAGE_SIZE = 20;
 
     private final PostRepository postRepository;
     private final ImageService imageService;
     private final PostLikeRepository postLikeRepository;
 
-    public Page<PostResponse> findAll(String username, Pageable pageable) {
-        return postRepository.findAllWithImages(pageable)
-                .map((post) -> toResponse(post, username));
+    public CursorPage<PostResponse> findAll(String username, String cursor) {
+        PostWindow window = postRepository.findAllWithImages(cursor, PAGE_SIZE);
+        List<PostResponse> content = window.content().stream()
+                .map((post) -> toResponse(post, username))
+                .toList();
+        String nextCursor = null;
+        String prevCursor = null;
+        if (window.hasNext()) {
+            Post last = window.content().getLast();
+            nextCursor = new PostListCursor(last.getCreatedAt(), last.getId(), false).encode();
+        }
+        if (window.hasPrevious()) {
+            Post first = window.content().getFirst();
+            prevCursor = new PostListCursor(first.getCreatedAt(), first.getId(), true).encode();
+        }
+        return new CursorPage<>(content, nextCursor, prevCursor, window.hasNext(), window.hasPrevious());
     }
 
     public PostResponse findById(Long id, String username) {

@@ -4,10 +4,12 @@ import type { components } from './generated/schema'
 export type PostResponse = components['schemas']['PostResponse']
 export type CreatePostRequest = components['schemas']['CreatePostRequest']
 export type UpdatePostRequest = components['schemas']['UpdatePostRequest']
-export type PagedPosts = components['schemas']['PagedModelPostResponse']
+export type CursorPosts = components['schemas']['CursorPagePostResponse']
 
-export async function getPosts(page = 0): Promise<PagedPosts> {
-  const response = await apiClient.get<PagedPosts>('/posts', { params: { page } })
+export async function getPosts(cursor?: string | null): Promise<CursorPosts> {
+  const response = await apiClient.get<CursorPosts>('/posts', {
+    params: cursor ? { cursor } : undefined,
+  })
   return response.data
 }
 
