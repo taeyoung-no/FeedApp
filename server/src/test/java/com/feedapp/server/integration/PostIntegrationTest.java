@@ -1,7 +1,5 @@
 package com.feedapp.server.integration;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,6 +15,7 @@ import java.util.UUID;
 import com.feedapp.server.member.LoginRequest;
 import com.feedapp.server.member.SignupRequest;
 import com.feedapp.server.post.CreatePostRequest;
+import com.feedapp.server.post.PostRepository;
 import com.feedapp.server.post.UpdatePostRequest;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
@@ -84,6 +83,9 @@ class PostIntegrationTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    @Autowired
+    PostRepository postRepository;
+
     @Test
     @DisplayName("게시글 작성, 상세 조회")
     void createAndGetPost() throws Exception {
@@ -114,28 +116,42 @@ class PostIntegrationTest {
     @Test
     @DisplayName("게시글 목록 조회")
     void findAllPosts() throws Exception {
+        postRepository.deleteAll();
         final AuthSession session = signupAndLogin();
-        final String title1 = "t1-" + uniqueUsername();
-        final String title2 = "t2-" + uniqueUsername();
+        createPost(session.cookies(), "title1", "content");
+        createPost(session.cookies(), "title2", "content");
+        createPost(session.cookies(), "title3", "content");
 
-        mockMvc.perform(post("/api/posts")
-                        .cookie(session.cookies())
-                        .contentType(APPLICATION_JSON)
-                        .content(postJson(title1, "content1")))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/posts")
-                        .cookie(session.cookies())
-                        .contentType(APPLICATION_JSON)
-                        .content(postJson(title2, "content2")))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(get("/api/posts"))
+        final MvcResult first = mockMvc.perform(get("/api/posts").param("size", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(greaterThanOrEqualTo(2)))
-                .andExpect(jsonPath("$.content[*].title", hasItems(title1, title2)))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(20));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].title").value("title3"))
+                .andExpect(jsonPath("$.content[1].title").value("title2"))
+                .andExpect(jsonPath("$.hasNext").value(true))
+                .andExpect(jsonPath("$.hasPrevious").value(false))
+                .andReturn();
+        final String nextCursor = readString(first, "nextCursor");
+
+        final MvcResult next = mockMvc.perform(get("/api/posts")
+                        .param("size", "2")
+                        .param("cursor", nextCursor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("title1"))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.hasPrevious").value(true))
+                .andReturn();
+        final String prevCursor = readString(next, "prevCursor");
+
+        mockMvc.perform(get("/api/posts")
+                        .param("size", "2")
+                        .param("cursor", prevCursor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].title").value("title3"))
+                .andExpect(jsonPath("$.content[1].title").value("title2"))
+                .andExpect(jsonPath("$.hasNext").value(true))
+                .andExpect(jsonPath("$.hasPrevious").value(false));
     }
 
     @Test
@@ -289,8 +305,15 @@ class PostIntegrationTest {
     }
 
     private long readId(MvcResult result) throws Exception {
-        final JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
-        return node.get("id").asLong();
+        return readNode(result).get("id").asLong();
+    }
+
+    private String readString(MvcResult result, String field) throws Exception {
+        return readNode(result).get(field).asString();
+    }
+
+    private JsonNode readNode(MvcResult result) throws Exception {
+        return objectMapper.readTree(result.getResponse().getContentAsString());
     }
 
     private String postJson(String title, String content) throws Exception {
