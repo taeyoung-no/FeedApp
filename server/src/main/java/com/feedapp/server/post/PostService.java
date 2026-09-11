@@ -16,14 +16,17 @@ import org.springframework.stereotype.Service;
 public class PostService {
 
     private static final int CONTENT_MAX_LENGTH = 500;
-    private static final int PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final PostRepository postRepository;
     private final ImageService imageService;
     private final PostLikeRepository postLikeRepository;
 
-    public CursorPage<PostResponse> findAll(String username, String cursor) {
-        PostWindow window = postRepository.findAllWithImages(cursor, PAGE_SIZE);
+    public CursorPage<PostResponse> findAll(String username, String cursor, int size) {
+        if (size < 1 || size > MAX_PAGE_SIZE) {
+            throw new IllegalArgumentException("잘못된 크기");
+        }
+        PostWindow window = postRepository.findAllWithImages(cursor, size);
         List<PostResponse> content = window.content().stream()
                 .map((post) -> toResponse(post, username))
                 .toList();

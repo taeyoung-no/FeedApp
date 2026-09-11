@@ -24,9 +24,10 @@ public class PostController {
     @ResponseStatus(HttpStatus.OK)
     public CursorPage<PostResponse> findAll(
             @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size,
             Authentication authentication
     ) {
-        return postService.findAll(usernameOf(authentication), cursor);
+        return postService.findAll(usernameOf(authentication), cursor, size);
     }
 
     @GetMapping("/api/posts/{id}")

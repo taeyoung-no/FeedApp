@@ -665,6 +665,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string;
+                size?: number;
             };
             header?: never;
             path?: never;
