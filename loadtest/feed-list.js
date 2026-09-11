@@ -1,10 +1,11 @@
 import http from 'k6/http';
+import encoding from 'k6/encoding';
 import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 const errorRate = new Rate('feed_list_errors');
 const feedListDuration = new Trend('feed_list_duration', true);
-const page = __ENV.PAGE ?? '0';
+const cursor = encoding.b64encode('2026-09-10T00:00:00|21|n', 'rawurl');
 
 export const options = {
   scenarios: {
@@ -17,8 +18,8 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(`http://localhost:8080/api/posts?page=${page}`, {
-    tags: { name: `GET /api/posts?page=${page}` },
+  const res = http.get(`http://localhost:8080/api/posts?cursor=${encodeURIComponent(cursor)}`, {
+    tags: { name: 'GET /api/posts?cursor' },
   });
 
   feedListDuration.add(res.timings.duration);

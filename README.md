@@ -80,7 +80,7 @@ docker compose -f server/docker-compose.yml exec -T mysql mysql -u admin -pqwer1
 ```
 ```bash
 # 테스트
-k6 run -e PAGE=<페이지> loadtest/feed-list.js
+k6 run loadtest/feed-list.js
 ```
 
 ### 동시성 테스트
