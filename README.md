@@ -3,15 +3,17 @@
 TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용한다고 알려진 기술 스택을 학습하기 위한 Spring Boot, React CRUD 프로젝트입니다. [링크](https://feed.taeyoung-no.com)
 
 ## 목차
-1. [기능](#기능)
+1. [개발 노트](#개발-노트)
 2. [기술 스택](#기술-스택)
-3. [개발 노트](#개발-노트)
+3. [기능](#기능)
 4. [로컬 실행](#로컬-실행)
 
-## 기능
-- 회원 기능
-- 글 작성, 목록 조회, 상세 조회, 수정, 삭제 (이미지 포함, S3 Presigned URL)
-- 댓글 작성, 목록 조회, 수정, 삭제
+## 개발 노트
+- [JWT 안전하게 사용하기](https://taeyoung-no.github.io/2026/09/04/jwt.html)
+- [N+1 문제가 그렇게 치명적인가? 증거 있음?](https://taeyoung-no.github.io/2026/08/08/n+1.html)
+- [좋아요 기능 성능 개선 및 동시성 문제 해결](https://taeyoung-no.github.io/2026/09/03/race-condition.html)
+- [인덱스 스캔 50만 vs. 풀 테이블 스캔 100만](https://taeyoung-no.github.io/2026/09/16/index-vs-full-table.html)
+- [ECS: 업데이트 시 deployment 실패한 이유](https://taeyoung-no.github.io/2026/08/09/ecs.html)
 
 ## 기술 스택
 핵심이라고 생각하는 것만 정리했습니다.
@@ -29,12 +31,10 @@ TDD, Docker, AWS 배포, CI/CD, 부하 테스트 등 포함 실무에서 사용�
 | 배포 | AWS ECR, ECS, S3, CloudFront |
 | CI/CD | GitHub Actions |
 
-## 개발 노트
-- [JWT 안전하게 사용하기](https://taeyoung-no.github.io/2026/09/04/jwt.html)
-- [N+1 문제가 그렇게 치명적인가? 증거 있음?](https://taeyoung-no.github.io/2026/08/08/n+1.html)
-- [좋아요 기능 성능 개선 및 동시성 문제 해결](https://taeyoung-no.github.io/2026/09/03/race-condition.html)
-- [인덱스 스캔 50만 vs. 풀 테이블 스캔 100만](https://taeyoung-no.github.io/2026/09/16/index-vs-full-table.html)
-- [ECS: 업데이트 시 deployment 실패한 이유](https://taeyoung-no.github.io/2026/08/09/ecs.html)
+## 기능
+- 회원 기능
+- 글 작성, 목록 조회, 상세 조회, 수정, 삭제 (이미지 포함, S3 Presigned URL)
+- 댓글 작성, 목록 조회, 수정, 삭제
 
 ## 로컬 실행
 ### 요구사항
