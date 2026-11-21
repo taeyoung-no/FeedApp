@@ -23,6 +23,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final ImageService imageService;
     private final PostLikeRepository postLikeRepository;
+    private final PopularPostCache popularPostCache;
 
     public CursorPage<PostResponse> findAll(String username, String cursor, int size) {
         if (size < 1 || size > MAX_PAGE_SIZE) {
@@ -46,8 +47,13 @@ public class PostService {
     }
 
     public List<PostResponse> findPopular(String username) {
-        LocalDateTime since = LocalDateTime.now().minusDays(POPULAR_DAYS);
-        return postRepository.findPopularWithImages(since, POPULAR_SIZE).stream()
+        List<PopularPost> posts = popularPostCache.getOrLoad(() -> {
+            LocalDateTime since = LocalDateTime.now().minusDays(POPULAR_DAYS);
+            return postRepository.findPopularWithImages(since, POPULAR_SIZE).stream()
+                    .map(PopularPost::from)
+                    .toList();
+        });
+        return posts.stream()
                 .map((post) -> toResponse(post, username))
                 .toList();
     }
@@ -120,23 +126,41 @@ public class PostService {
     }
 
     private PostResponse toResponse(Post post, String username) {
-        List<PostImageResponse> images = post.getImages().stream()
-                .map((image) -> new PostImageResponse(
-                        image.getImageKey(),
-                        imageService.createDownloadUrl(image.getImageKey())
-                ))
+        List<String> imageKeys = post.getImages().stream()
+                .map(PostImage::getImageKey)
                 .toList();
-        boolean liked = username != null
-                && postLikeRepository.existsByMemberUsernameAndPostId(username, post.getId());
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getContent(),
                 post.getAuthor(),
                 post.getCreatedAt(),
-                images,
-                liked,
+                toImageResponses(imageKeys),
+                isLiked(username, post.getId()),
                 post.getLikeCount()
         );
+    }
+
+    private PostResponse toResponse(PopularPost post, String username) {
+        return new PostResponse(
+                post.id(),
+                post.title(),
+                post.content(),
+                post.author(),
+                post.createdAt(),
+                toImageResponses(post.imageKeys()),
+                isLiked(username, post.id()),
+                post.likeCount()
+        );
+    }
+
+    private List<PostImageResponse> toImageResponses(List<String> imageKeys) {
+        return imageKeys.stream()
+                .map((imageKey) -> new PostImageResponse(imageKey, imageService.createDownloadUrl(imageKey)))
+                .toList();
+    }
+
+    private boolean isLiked(String username, Long postId) {
+        return username != null && postLikeRepository.existsByMemberUsernameAndPostId(username, postId);
     }
 }
