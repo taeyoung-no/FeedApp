@@ -1,5 +1,7 @@
 package com.feedapp.server.post;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -28,6 +30,12 @@ public class PostController {
             Authentication authentication
     ) {
         return postService.findAll(usernameOf(authentication), cursor, size);
+    }
+
+    @GetMapping("/api/posts/popular")
+    @ResponseStatus(HttpStatus.OK)
+    public List<PostResponse> findPopular(Authentication authentication) {
+        return postService.findPopular(usernameOf(authentication));
     }
 
     @GetMapping("/api/posts/{id}")

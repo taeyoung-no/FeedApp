@@ -46,6 +46,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     );
 
     @Query("""
+            SELECT p.id FROM Post p
+            WHERE p.createdAt >= :since
+            ORDER BY p.likeCount DESC, p.id DESC
+            """)
+    List<Long> findPopularIds(@Param("since") LocalDateTime since, Pageable pageable);
+
+    @Query("""
             SELECT DISTINCT p FROM Post p
             LEFT JOIN FETCH p.images
             WHERE p.id IN :ids
@@ -84,16 +91,24 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         return fetchWindow(ids, hasNext, hasPrevious);
     }
 
+    default List<Post> findPopularWithImages(LocalDateTime since, int size) {
+        List<Long> ids = findPopularIds(since, PageRequest.of(0, size));
+        return findAllWithImagesInOrder(ids);
+    }
+
     private PostWindow fetchWindow(List<Long> ids, boolean hasNext, boolean hasPrevious) {
+        return new PostWindow(findAllWithImagesInOrder(ids), hasNext, hasPrevious);
+    }
+
+    private List<Post> findAllWithImagesInOrder(List<Long> ids) {
         if (ids.isEmpty()) {
-            return new PostWindow(List.of(), hasNext, hasPrevious);
+            return List.of();
         }
         Map<Long, Post> byId = findAllWithImagesByIdIn(ids).stream()
                 .collect(Collectors.toMap(Post::getId, Function.identity()));
-        List<Post> content = ids.stream()
+        return ids.stream()
                 .map(byId::get)
                 .toList();
-        return new PostWindow(content, hasNext, hasPrevious);
     }
 
     @Modifying()

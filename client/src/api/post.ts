@@ -13,6 +13,11 @@ export async function getPosts(cursor?: string | null): Promise<CursorPosts> {
   return response.data
 }
 
+export async function getPopularPosts(): Promise<PostResponse[]> {
+  const response = await apiClient.get<PostResponse[]>('/posts/popular')
+  return response.data
+}
+
 export async function getPost(id: string): Promise<PostResponse> {
   const response = await apiClient.get<PostResponse>(`/posts/${id}`)
   return response.data

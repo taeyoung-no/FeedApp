@@ -27,6 +27,9 @@ function Navbar() {
           <Link to="/" className="text-2xl cursor-pointer hover:underline">
             Feed
           </Link>
+          <Link to="/popular" className="cursor-pointer hover:underline">
+            인기글
+          </Link>
           <button type="button" onClick={handleCreatePost} className="cursor-pointer hover:underline">
             글 발행
           </button>

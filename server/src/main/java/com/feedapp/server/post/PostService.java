@@ -17,6 +17,8 @@ public class PostService {
 
     private static final int CONTENT_MAX_LENGTH = 500;
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int POPULAR_DAYS = 1;
+    private static final int POPULAR_SIZE = 10;
 
     private final PostRepository postRepository;
     private final ImageService imageService;
@@ -41,6 +43,13 @@ public class PostService {
             prevCursor = new PostListCursor(first.getCreatedAt(), first.getId(), true).encode();
         }
         return new CursorPage<>(content, nextCursor, prevCursor, window.hasNext(), window.hasPrevious());
+    }
+
+    public List<PostResponse> findPopular(String username) {
+        LocalDateTime since = LocalDateTime.now().minusDays(POPULAR_DAYS);
+        return postRepository.findPopularWithImages(since, POPULAR_SIZE).stream()
+                .map((post) -> toResponse(post, username))
+                .toList();
     }
 
     public PostResponse findById(Long id, String username) {
